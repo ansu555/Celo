@@ -47,3 +47,4 @@ node_modules
 # runtime data files (generated at runtime)
 /data/*.json
 
+*.svg
