@@ -2,15 +2,15 @@
 import React, { useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { BookOpen, X } from "lucide-react"
-import { FUJI_SYMBOL_TO_TOKEN } from "@/lib/tokens"
+import { listTokenRegistry } from "@/lib/tokens"
 import { useChainId } from "wagmi"
 
 export default function GuidelinesBubble() {
   const [open, setOpen] = useState(false)
-  const chainId = useChainId() || 43113
-  const chainLabel = 'Avalanche Fuji'
-  const nativeSymbol = 'AVAX'
-  const TOKENS = FUJI_SYMBOL_TO_TOKEN
+  const chainId = useChainId() || 44787
+  const chainLabel = chainId === 42220 ? 'Celo Mainnet' : 'Celo Alfajores'
+  const nativeSymbol = 'CELO'
+  const TOKENS = listTokenRegistry(chainId)
   // Dynamically list all known tokens for the selected chain
   const SUPPORTED: string[] = Object.keys(TOKENS || {})
 
@@ -56,7 +56,7 @@ export default function GuidelinesBubble() {
                 <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
                   {SUPPORTED.map((sym) => {
                     const t = TOKENS[sym]
-                    const addr = t?.address === "AVAX" ? "native" : t?.address
+                    const addr = t?.address === "CELO" ? "native" : t?.address
                     return (
                       <li key={sym} className="flex justify-between">
                         <span className="font-medium">{sym}</span>
@@ -87,8 +87,7 @@ export default function GuidelinesBubble() {
                 <p className="text-xs text-slate-600 dark:text-slate-300">
                   The smart account function is shared across all users for now (may change in future).  
                   You see the same smart account because it is created with the server/agent key, not the connected wallet.  
-                  Ensure the smart account has enough {nativeSymbol} for approvals when gasless isn’t available.  
-                  {chainId === 43113 ? '0xGasless support on Fuji may be limited.' : ''}
+                  Ensure the smart account has enough {nativeSymbol} for approvals when gasless isn’t available.
                 </p>
               </section>
 

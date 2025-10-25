@@ -5,24 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { RouteDisplay, type QuoteResponse, type RouteQuote } from './route-display'
-import { resolveTokenBySymbol } from '@/lib/tokens'
+import { listTokenRegistry, resolveTokenBySymbol } from '@/lib/tokens'
 import { getAmountsOut } from '@/lib/amm/routerClient'
 import { getAmmAddresses } from '@/lib/amm/config'
 
-import { FUJI_SYMBOL_TO_TOKEN } from '@/lib/tokens'
-
 // Build supported tokens list dynamically from registry - computed at module level, not using hooks
+const TOKEN_REGISTRY = listTokenRegistry()
+
 const getSupportedTokens = () => {
-  const base = ['WAVAX', 'USDC', 'WETH.e', 'USDT.e']
-  const custom = Object.keys(FUJI_SYMBOL_TO_TOKEN).filter(s => ['TKA','TKB','TKC'].includes(s))
-  return [...base, ...custom]
+  return Object.values(TOKEN_REGISTRY).map(token => token.symbol)
 }
 
 const SUPPORTED_TOKENS = getSupportedTokens()
 
 export const SwapInterface: React.FC = () => {
-  const [tokenIn, setTokenIn] = useState('WAVAX')
-  const [tokenOut, setTokenOut] = useState('USDC')
+  const [tokenIn, setTokenIn] = useState(SUPPORTED_TOKENS[0] ?? 'cUSD')
+  const [tokenOut, setTokenOut] = useState(SUPPORTED_TOKENS[1] ?? 'cEUR')
   const [amount, setAmount] = useState('1')
   const [slippage, setSlippage] = useState(100) // 1%
   const [quote, setQuote] = useState<QuoteResponse | null>(null)
@@ -41,7 +39,7 @@ export const SwapInterface: React.FC = () => {
       const tIn = resolveTokenBySymbol(tokenIn)
       const tOut = resolveTokenBySymbol(tokenOut)
       const routerAddr = getAmmAddresses().router
-      if (tIn && tOut && tIn.address !== 'AVAX' && tOut.address !== 'AVAX' && routerAddr) {
+  if (tIn && tOut && tIn.address !== 'CELO' && tOut.address !== 'CELO' && routerAddr) {
         try {
           const onchain = await getAmountsOut(amount, [tIn.address as string, tOut.address as string])
           const route = {

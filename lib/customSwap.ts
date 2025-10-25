@@ -7,14 +7,26 @@ import { findBestRouteQuote, discoverRoutes, quoteRoute, type Route, type RouteQ
 import { CustomSwapError, wrapUnknown, interpretExecutionError } from './errors'
 import { logSwapEvent } from './log'
 
+const DEFAULT_CELO_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 44787)
+
+function requireErc20Address(token: NonNullable<ReturnType<typeof resolveTokenBySymbol>>, context: string): Address {
+  if (token.address === 'CELO') {
+    throw new CustomSwapError('UNSUPPORTED_TOKEN', `Native CELO not yet supported for ${context}; wrap to ERC-20 first`, {
+      data: { symbol: token.symbol }
+    })
+  }
+  return token.address as Address
+}
+
 /**
  * Reconstruct route from routeId (base64 encoded pool addresses).
  * Returns the Route object or null if routeId is invalid or pools don't exist.
  */
 export async function reconstructRouteFromId(
-  tokenIn: string, 
-  tokenOut: string, 
-  routeId: string
+  tokenIn: string,
+  tokenOut: string,
+  routeId: string,
+  chainId: number = DEFAULT_CELO_CHAIN_ID
 ): Promise<Route | null> {
   try {
     // Decode base64 routeId to get pool addresses
@@ -33,8 +45,8 @@ export async function reconstructRouteFromId(
     }
     
     // Reconstruct token path by following pool connections
-    const tokenInInfo = resolveTokenBySymbol(tokenIn, 43113) // Always use Fuji for custom swaps
-    const tokenOutInfo = resolveTokenBySymbol(tokenOut, 43113)
+  const tokenInInfo = resolveTokenBySymbol(tokenIn, chainId)
+  const tokenOutInfo = resolveTokenBySymbol(tokenOut, chainId)
     if (!tokenInInfo || !tokenOutInfo) return null
     
     const tokens = [tokenInInfo]
@@ -98,7 +110,10 @@ export async function simulateCustomSwap(
     if (params.routeId.startsWith('ONCHAIN:')) {
       // Force direct on-chain quote ignoring local pools
       try {
-        const path = [tokenIn.address, tokenOut.address]
+        const path = [
+          requireErc20Address(tokenIn, 'on-chain direct quote'),
+          requireErc20Address(tokenOut, 'on-chain direct quote')
+        ]
         const amounts = await ctx.publicClient.readContract({
           address: routerAddress,
           abi: RouterAbi as any,
@@ -111,29 +126,30 @@ export async function simulateCustomSwap(
         throw wrapUnknown('SIMULATION_FAILED', 'On-chain direct quote failed', e)
       }
     } else {
-    const reconstructedRoute = await reconstructRouteFromId(
-      params.tokenInSymbol, 
-      params.tokenOutSymbol, 
-      params.routeId
-    )
-    
-    if (!reconstructedRoute) {
-      throw new CustomSwapError('ROUTE_NOT_FOUND', 'Invalid or expired route ID', { 
-        data: { routeId: params.routeId } 
-      })
-    }
-    
-    const routeQuote = await quoteRoute(reconstructedRoute, amountInUnits)
-    if (!routeQuote) {
-      throw new CustomSwapError('ROUTE_QUOTE_FAILED', 'Failed to quote specified route', { 
-        data: { routeId: params.routeId } 
-      })
-    }
-    
-    expectedOutUnits = routeQuote.amountOut
-    priceImpactBps = routeQuote.cumulativePriceImpactBps
-    routeKind = reconstructedRoute.pools.length === 1 ? 'DIRECT' : 'MULTI_HOP'
-    routeData = reconstructedRoute
+      const reconstructedRoute = await reconstructRouteFromId(
+        params.tokenInSymbol,
+        params.tokenOutSymbol,
+        params.routeId,
+        ctx.chainId
+      )
+
+      if (!reconstructedRoute) {
+        throw new CustomSwapError('ROUTE_NOT_FOUND', 'Invalid or expired route ID', {
+          data: { routeId: params.routeId }
+        })
+      }
+
+      const routeQuote = await quoteRoute(reconstructedRoute, amountInUnits)
+      if (!routeQuote) {
+        throw new CustomSwapError('ROUTE_QUOTE_FAILED', 'Failed to quote specified route', {
+          data: { routeId: params.routeId }
+        })
+      }
+
+      expectedOutUnits = routeQuote.amountOut
+      priceImpactBps = routeQuote.cumulativePriceImpactBps
+      routeKind = reconstructedRoute.pools.length === 1 ? 'DIRECT' : 'MULTI_HOP'
+      routeData = reconstructedRoute
     }
   } else {
     // Auto-select best route (existing logic)
@@ -155,7 +171,10 @@ export async function simulateCustomSwap(
         // 3. Final fallback: on-chain router static call
         try {
           // Build simple direct path [tokenIn, tokenOut]
-          const path = [tokenIn.address, tokenOut.address]
+          const path = [
+            requireErc20Address(tokenIn, 'router fallback quote'),
+            requireErc20Address(tokenOut, 'router fallback quote')
+          ]
           const amounts = await ctx.publicClient.readContract({
             address: routerAddress,
             abi: RouterAbi as any,
@@ -262,7 +281,7 @@ export async function prepareCustomSwap(opts: CustomSwapParams, chainId: number)
     expectedOutUnits,
     minOutUnits,
     slippageBps,
-    route: { hops: [tokenIn.address === 'AVAX' ? 'NATIVE' : (tokenIn.address as string), tokenOut.address === 'AVAX' ? 'NATIVE' : (tokenOut.address as string)], kind: 'DIRECT_PLACEHOLDER' as const }
+  route: { hops: [tokenIn.address === 'CELO' ? 'NATIVE' : (tokenIn.address as string), tokenOut.address === 'CELO' ? 'NATIVE' : (tokenOut.address as string)], kind: 'DIRECT_PLACEHOLDER' as const }
   }
 }
 
@@ -285,7 +304,7 @@ export async function executeCustomSwap(
   const amountInUnits = parseUnits(params.amount, tokenIn.decimals)
   const minOutUnits = BigInt(simulation.minOut)
 
-  // If tokenIn is ERC20 (not AVAX sentinel), ensure allowance to (future) router or target contract
+  // If tokenIn is ERC20 (not CELO native sentinel), ensure allowance to (future) router or target contract
   // Allow server to fall back to NEXT_PUBLIC_AMM_ROUTER (set for frontend) if CUSTOM_SWAP_ROUTER is not provided
   const routerAddress = (process.env.CUSTOM_SWAP_ROUTER || process.env.NEXT_PUBLIC_AMM_ROUTER || '').trim() as Address | ''
   if (!routerAddress) {
@@ -293,7 +312,7 @@ export async function executeCustomSwap(
     throw new CustomSwapError('ROUTER_NOT_CONFIGURED', 'CUSTOM_SWAP_ROUTER or NEXT_PUBLIC_AMM_ROUTER not set. Deploy router and set env variable.')
   }
 
-  if (tokenIn.address !== 'AVAX') {
+  if (tokenIn.address !== 'CELO') {
     try {
       const allowance: bigint = await ctx.publicClient.readContract({
         address: tokenIn.address as Address,
@@ -359,7 +378,7 @@ export async function executeCustomSwap(
   // Build execution path. If simulation produced a multi-hop route, use it; otherwise fallback to direct.
   let path: Address[]
   if (simulation.route && simulation.route.hops && simulation.route.hops.length > 2) {
-    // Use simulated hops; validate first & map any AVAX sentinel if ever present in route (currently tokens are ERC20s)
+  // Use simulated hops; validate first & map any CELO sentinel if ever present in route (currently tokens are ERC20s)
     const hops = simulation.route.hops
     // Basic sanity: first & last hop must match tokenIn/tokenOut
     if (hops[0].toLowerCase() !== tokenIn.address.toLowerCase() || hops[hops.length - 1].toLowerCase() !== tokenOut.address.toLowerCase()) {
@@ -369,8 +388,8 @@ export async function executeCustomSwap(
   } else {
     // Direct path (two-token)
     path = [
-      tokenIn.address === 'AVAX' ? '0x0000000000000000000000000000000000000000' : tokenIn.address as Address,
-      tokenOut.address === 'AVAX' ? '0x0000000000000000000000000000000000000000' : tokenOut.address as Address
+      requireErc20Address(tokenIn, 'router execution'),
+      requireErc20Address(tokenOut, 'router execution')
     ]
   }
 

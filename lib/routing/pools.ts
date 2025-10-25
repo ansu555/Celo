@@ -1,4 +1,4 @@
-// Static (virtual) pool registry for Avalanche Fuji.
+// Static (virtual) pool registry for Celo (default Alfajores testnet).
 // These reserves are NOT on-chain fetched yet; they are placeholder values to enable
 // price impact & routing math scaffolding. Replace with real on-chain queries later.
 //
@@ -24,17 +24,16 @@ function toUnits(amount: string, decimals: number): bigint {
   return BigInt(int + fracPadded)
 }
 
-const pools: Pool[] = (() => {
-  // Always use Fuji testnet (43113) for pool definitions since routing is currently Fuji-focused
-  const chainId = 43113
-  const WAVAX = resolveTokenBySymbol('WAVAX', chainId)
-  const USDC = resolveTokenBySymbol('USDC', chainId)
-  const WETH = resolveTokenBySymbol('WETH.e', chainId) || resolveTokenBySymbol('WETH', chainId)
-  const USDT = resolveTokenBySymbol('USDT.e', chainId) || resolveTokenBySymbol('USDT', chainId)
+const DEFAULT_POOL_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
 
-  // Guard against missing tokens during build time
-  if (!WAVAX || !USDC || !WETH || !USDT) {
-    console.warn('Some tokens not found during pool initialization:', { WAVAX, USDC, WETH, USDT })
+const pools: Pool[] = (() => {
+  const chainId = DEFAULT_POOL_CHAIN_ID
+  const CELO = resolveTokenBySymbol('CELO', chainId)
+  const CUSD = resolveTokenBySymbol('cUSD', chainId) || resolveTokenBySymbol('CUSD', chainId)
+  const CEUR = resolveTokenBySymbol('cEUR', chainId) || resolveTokenBySymbol('CEUR', chainId)
+
+  if (!CELO || !CUSD || !CEUR) {
+    console.warn('Some tokens not found during pool initialization:', { CELO, CUSD, CEUR })
     return []
   }
 
@@ -42,30 +41,21 @@ const pools: Pool[] = (() => {
   // Aim: make small trades show tiny price impact while large trades move price.
   return [
     {
-      id: 'WAVAX-USDC',
-      token0: WAVAX,
-      token1: USDC,
-      reserve0: toUnits('500', WAVAX.decimals),     // 500 WAVAX
-      reserve1: toUnits('200000', USDC.decimals),   // 200,000 USDC
+      id: 'CELO-cUSD',
+      token0: CELO,
+      token1: CUSD,
+      reserve0: toUnits('5000', CELO.decimals),     // 5,000 CELO
+      reserve1: toUnits('250000', CUSD.decimals),   // 250,000 cUSD
       feeBps: 30,
       type: 'V2'
     },
     {
-      id: 'WAVAX-WETH',
-      token0: WAVAX,
-      token1: WETH,
-      reserve0: toUnits('400', WAVAX.decimals),
-      reserve1: toUnits('400', WETH.decimals),
-      feeBps: 30,
-      type: 'V2'
-    },
-    {
-      id: 'USDC-USDT',
-      token0: USDC,
-      token1: USDT,
-      reserve0: toUnits('150000', USDC.decimals),
-      reserve1: toUnits('149500', USDT.decimals), // slight skew
-      feeBps: 5, // stable pair lower fee
+      id: 'cUSD-cEUR',
+      token0: CUSD,
+      token1: CEUR,
+      reserve0: toUnits('200000', CUSD.decimals),
+      reserve1: toUnits('180000', CEUR.decimals),
+      feeBps: 5,
       type: 'V2'
     }
   ]
@@ -111,11 +101,11 @@ export function quoteSingleHop(tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn
   }
 }
 
-// Future: multi-hop quoting (WAVAX -> USDC -> USDT, etc.)
+// Future: multi-hop quoting (CELO -> cUSD -> cEUR, etc.)
 export function quoteBest(tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn: bigint): QuoteResult | null {
   // 1. Direct pool
   const direct = quoteSingleHop(tokenIn, tokenOut, amountIn)
-  // 2. (Placeholder) Could attempt two-hop via WAVAX or USDC as common bases
+  // 2. (Placeholder) Could attempt two-hop via CELO or cUSD as common bases
   // Return best by amountOut
   return direct // for now
 }

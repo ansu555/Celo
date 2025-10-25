@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseUnits, createPublicClient, http } from 'viem'
-import { avalancheFuji } from 'viem/chains'
+import { celo, celoAlfajores } from 'viem/chains'
 import { resolveTokenBySymbol } from '../../../../lib/tokens'
 import { discoverRoutes, quoteRoute, type Route } from '../../../../lib/routing/paths'
 import RouterAbi from '@/lib/abi/Router.json'
+
+const ROUTE_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
+const routeChain = ROUTE_CHAIN_ID === 42220 ? celo : celoAlfajores
+const defaultRpc = ROUTE_CHAIN_ID === 42220
+  ? 'https://forno.celo.org'
+  : 'https://alfajores-forno.celo-testnet.org'
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,8 +27,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const tokenIn = resolveTokenBySymbol(tokenInSymbol)
-    const tokenOut = resolveTokenBySymbol(tokenOutSymbol)
+  const tokenIn = resolveTokenBySymbol(tokenInSymbol, ROUTE_CHAIN_ID)
+  const tokenOut = resolveTokenBySymbol(tokenOutSymbol, ROUTE_CHAIN_ID)
     
     if (!tokenIn || !tokenOut) {
       return NextResponse.json(
@@ -38,26 +44,31 @@ export async function GET(request: NextRequest) {
     const quotedRoutes = []
 
     // Setup on-chain client
-    const rpcUrl = process.env.RPC_URL_FUJI || process.env.RPC_URL || 'https://api.avax-test.network/ext/bc/C/rpc'
+    const rpcUrl = process.env.RPC_URL_CELO || process.env.RPC_URL || defaultRpc
     const routerAddress = process.env.CUSTOM_SWAP_ROUTER || process.env.NEXT_PUBLIC_AMM_ROUTER || ''
-  const publicClient = createPublicClient({ chain: avalancheFuji, transport: http(rpcUrl) })
+    const publicClient = createPublicClient({ chain: routeChain, transport: http(rpcUrl) })
 
     for (const route of allRoutes) {
       let amountOut: bigint | null = null
       let priceImpactBps: number | null = null
       // For direct routes, use on-chain getAmountsOut
       if (route.pools.length === 1 && routerAddress) {
-        try {
-          const path = route.tokens.map(t => t.address)
-          const amounts = await publicClient.readContract({
-            address: routerAddress as `0x${string}`,
-            abi: RouterAbi as any,
-            functionName: 'getAmountsOut',
-            args: [amountInUnits, path]
-          }) as bigint[]
-          amountOut = amounts[amounts.length - 1]
-        } catch (e) {
-          // fallback to local math if on-chain fails
+        const hasNative = route.tokens.some(t => t.address === 'CELO')
+        if (!hasNative) {
+          try {
+            const path = route.tokens.map(t => t.address as `0x${string}`)
+            const amounts = await publicClient.readContract({
+              address: routerAddress as `0x${string}`,
+              abi: RouterAbi as any,
+              functionName: 'getAmountsOut',
+              args: [amountInUnits, path]
+            }) as bigint[]
+            amountOut = amounts[amounts.length - 1]
+          } catch (e) {
+            const quote = await quoteRoute(route, amountInUnits)
+            amountOut = quote ? quote.amountOut : null
+          }
+        } else {
           const quote = await quoteRoute(route, amountInUnits)
           amountOut = quote ? quote.amountOut : null
         }
@@ -129,8 +140,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Reuse GET logic with POST body
-    const tokenInResolved = resolveTokenBySymbol(tokenIn)
-    const tokenOutResolved = resolveTokenBySymbol(tokenOut)
+  const tokenInResolved = resolveTokenBySymbol(tokenIn, ROUTE_CHAIN_ID)
+  const tokenOutResolved = resolveTokenBySymbol(tokenOut, ROUTE_CHAIN_ID)
     
     if (!tokenInResolved || !tokenOutResolved) {
       return NextResponse.json(
