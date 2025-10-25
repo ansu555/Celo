@@ -24,7 +24,6 @@ export function CeloProviders({ children }: { children: ReactNode }) {
           }}
           options={{ 
             embedGoogleFonts: false,
-            walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
           }}
         >
           {children}
