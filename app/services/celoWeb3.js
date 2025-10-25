@@ -1,6 +1,5 @@
-// connectWeb3.ts
+// celoWeb3.js - Celo-only wallet configuration
 import { createConfig, http } from 'wagmi';
-import { avalanche, avalancheFuji } from 'wagmi/chains';
 import { getDefaultConfig } from 'connectkit';
 
 // Celo chain definitions
@@ -42,18 +41,20 @@ const celoAlfajores = {
   testnet: true,
 };
 
-export const wagmiConfig = createConfig(
+// Celo-only wagmi configuration
+export const celoWagmiConfig = createConfig(
   getDefaultConfig({
-    appName: '10xSwap',
-    // Enable Avalanche and Celo chains
-    chains: [avalanche, avalancheFuji, celo, celoAlfajores],
+    appName: '10xSwap - Celo',
+    // Only Celo chains
+    chains: [celo, celoAlfajores],
     transports: {
-      [avalanche.id]: http(),
-      [avalancheFuji.id]: http(),
       [celo.id]: http(),
       [celoAlfajores.id]: http(),
     },
     autoConnect: false,
-    // walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
   })
 );
+
+// Export chain definitions for use in components
+export { celo, celoAlfajores };
