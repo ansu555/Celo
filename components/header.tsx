@@ -114,50 +114,54 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur dark:bg-[#171717]/95 shadow">
-      <div className="container flex h-16 items-center justify-between">
+    // Make header transparent so background shader is visible behind it
+    <header className="sticky top-0 z-50 w-full bg-transparent text-white backdrop-blur-md">
+  <div className="container relative flex h-16 items-center justify-between px-4 md:px-8">
         {/* Logo */}
-       <Link href="/" className="flex items-center font-extrabold text-lg md:text-xl tracking-tight">
+  <Link href="/" className="absolute left-8 top-1/2 transform -translate-y-1/2 z-10 flex items-center font-extrabold text-lg md:text-xl tracking-tight">
         <img 
           src="/10xswap_logo.png" 
-          alt="10xSwap Logo" 
+          alt="Accorto Logo" 
           className="h-8 w-8 mr-2"
         />
-        <span className="text-primary dark:text-[#F3C623]">10x</span>
-        <span className="dark:text-white">Swap</span>
+        <span className="text-white">Accorto</span>
       </Link>
 
         {/* Desktop navigation - Centered */}
-  <nav className="hidden md:flex gap-6 lg:gap-8 absolute left-1/2 -translate-x-1/2 transform">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "text-sm font-medium transition-colors",
-                pathname === item.href
-                  ? "text-primary dark:text-[#F3C623] underline"
-                  : "text-gray-700 hover:text-primary dark:text-[#F3C623]/60 dark:hover:text-[#F3C623]"
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
+  <nav className="hidden md:flex gap-6 items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  // base
+                  "text-sm font-medium transition-colors inline-flex items-center justify-center",
+                  "px-4 py-2 rounded-full",
+                  // visual
+                  isActive
+                    ? "bg-white/25 text-white backdrop-blur-md shadow-sm"
+                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Desktop wallet connect and mode toggle */}
-        <div className="hidden md:flex items-center gap-2">
+    {/* Desktop wallet connect and mode toggle (aligned to right corner) */}
+  <div className="hidden md:flex items-center gap-3 text-white absolute right-8 top-1/2 transform -translate-y-1/2">
           <RuleBuilderModal
             trigger={
-              <Button 
-                variant="outline" 
-                size="default" 
-                className="group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#F3C623]/25"
+              <Button
+                variant="ghost"
+                size="default"
+                className="px-6 py-2 rounded-[40px] bg-white/8 text-white border border-white/10 backdrop-blur-md hover:bg-white/12 shadow-[0_6px_18px_rgba(0,0,0,0.25)] flex items-center gap-3"
               >
-                <span className="relative z-10 transition-colors duration-300 group-hover:text-white dark:group-hover:text-black">
-                  Auto-Pilot Portfolio
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#F3C623] dark:to-[#F3C623]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                {/* optional left icon could go here */}
+                <span className="font-medium">Auto-Pilot Portfolio</span>
               </Button>
             }
             onPreview={(rule) => {
@@ -170,12 +174,14 @@ export function Header() {
           />
           <ConnectKitButton.Custom>
             {({ isConnected, show, truncatedAddress }) => (
-              <Button onClick={show} variant="outline" size="default">
-                {isConnected ? truncatedAddress : "Connect Wallet"}
+              <Button onClick={show} variant="ghost" size="default" className="px-4 py-2 rounded-[32px] bg-white/6 text-white border border-white/10 backdrop-blur-md hover:bg-white/12 shadow-sm">
+                <span className="font-medium text-sm">{isConnected ? truncatedAddress : "0xA339••••1366"}</span>
               </Button>
             )}
           </ConnectKitButton.Custom>
-          <ModeToggle />
+          <div className="ml-2">
+            <ModeToggle />
+          </div>
         </div>
 
         {/* Mobile menu button */}

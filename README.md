@@ -1,6 +1,6 @@
-# 10xSwap:
+# Accorto:
 
-10xSwap is a modern web application that allows users to explore cryptocurrency markets, manage assets on  Avalanche. It features an AI-powered chat agent that can understand natural language commands to perform actions like checking balances, getting token prices, and executing swaps and transfers.
+Accorto is a modern web application that allows users to explore cryptocurrency markets and manage assets on Avalanche. It features an AI-powered chat agent that can understand natural language commands to perform actions like checking balances, getting token prices, and executing swaps and transfers.
 
 ## Table of Contents
 

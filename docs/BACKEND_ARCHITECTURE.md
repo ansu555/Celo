@@ -1,4 +1,4 @@
-# 10xSwap Backend Architecture Deep Dive
+# Accorto Backend Architecture Deep Dive
 
 ## Table of Contents
 1. [Core Agent System](#core-agent-system)

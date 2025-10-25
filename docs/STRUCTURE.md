@@ -1,6 +1,6 @@
 # Project Structure and Conventions
 
-This document explains the folder layout and conventions for 10xSwap, so newcomers can navigate quickly and safely.
+This document explains the folder layout and conventions for Accorto, so newcomers can navigate quickly and safely.
 
 ## Top-level
 

@@ -16,10 +16,10 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative pt-20 pb-24 px-6 md:px-10 lg:px-16 overflow-hidden">
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-foreground to-foreground/70 dark:from-white dark:to-white/70 bg-clip-text text-transparent">
-            10xSwap Intelligence Hub
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white">
+            Accorto Intelligence Hub
           </h1>
-          <p className="mt-6 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-6 text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto">
             Real-time crypto data, automated portfolio logic, and intelligent routing—all in one unified interface.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -31,19 +31,7 @@ export default function HomePage() {
 
       {/* (Market Snapshot removed as requested) */}
 
-      {/* Mini Table */}
-      <section className="px-6 md:px-10 lg:px-16">
-        <div className="max-w-6xl mx-auto space-y-8">
-            <h2 className="text-2xl font-bold tracking-tight">Trending Assets</h2>
-            <MiniCryptoTable
-              selectedId={selectedId}
-              onSelect={(id) => setSelectedId(id)}
-              onFirstCoinLoaded={(id) => {
-                if (!selectedId) setSelectedId(id);
-              }}
-            />
-        </div>
-      </section>
+      {/* Trending assets table removed per request */}
     </div>
   );
 }

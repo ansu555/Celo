@@ -4,7 +4,8 @@ import GuidelinesBubble from "@/components/guidelines-bubble"
 
 export function Footer() {
   return (
-    <footer className="sticky bottom-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:bg-[#171717]/95 shadow-[0_-4px_20px_-4px_rgba(17,60,252,0.25)] dark:shadow-[0_-4px_20px_-4px_rgba(243,198,35,0.15)]">
+    // Make footer transparent so shader is visible under it and text adapts to background
+    <footer className="sticky bottom-0 z-40 w-full bg-transparent text-white backdrop-blur-md">
   <div className="container px-4 py-6">
         {/* Mobile and Tablet Layout */}
         <div className="flex flex-col space-y-4 md:hidden">
@@ -12,15 +13,14 @@ export function Footer() {
             <div className="flex items-center font-bold text-lg mb-2">
               <img 
                 src="/10xswap_logo.png" 
-                alt="10xSwap Logo" 
+                alt="Accorto Logo" 
                 className="h-10 w-10 mr-2"
               />
-              <span className="text-primary dark:text-[#F3C623]">10x</span>
-              <span className="dark:text-white">Swap</span>
+              <span className="text-white">Accorto</span>
             </div>
 
-            <p className="text-xs text-muted-foreground dark:text-[#F3C623]/60">
-              © {new Date().getFullYear()} 10xSwap. All rights reserved.
+            <p className="text-xs text-white/80">
+              © {new Date().getFullYear()} Accorto. All rights reserved.
             </p>
           </div>
           
@@ -53,15 +53,14 @@ export function Footer() {
             <div className="flex items-center font-bold text-lg mb-2">
               <img 
                 src="/10xswap_logo.png" 
-                alt="10xSwap Logo" 
+                alt="Accorto Logo" 
                 className="h-10 w-10 mr-2"
               />
-              <span className="text-primary dark:text-[#F3C623]">10x</span>
-              <span className="dark:text-white">Swap</span>
+              <span className="text-white">Accorto</span>
             </div>
 
-            <p className="text-xs text-muted-foreground dark:text-[#F3C623]/60 ml-4">
-              © {new Date().getFullYear()} 10xSwap. All rights reserved.
+            <p className="text-xs text-white/80 ml-4">
+              © {new Date().getFullYear()} Accorto. All rights reserved.
             </p>
           </div>
           {/* Center: Guidelines bubble truly centered */}

@@ -5,7 +5,7 @@ import { getDefaultConfig } from 'connectkit';
 
 export const wagmiConfig = createConfig(
   getDefaultConfig({
-    appName: '10xSwap',
+  appName: 'Accorto',
   // Enable Avalanche mainnet and Avalanche Fuji (testnet) only
   chains: [avalanche, avalancheFuji],
     transports: {

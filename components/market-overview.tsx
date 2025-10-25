@@ -43,20 +43,20 @@ export function MarketOverview() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatsCard
             title="Total Market Cap"
-            value={`$${formatMarketCap(stats.totalMarketCap)}`}
-            change={parseFloat(stats.marketCapChange) || 0}
+            value={`$${formatMarketCap(Number(stats.totalMarketCap))}`}
+            change={Number((stats as any).marketCapChange) || 0}
             icon={<DollarSign className="h-4 w-4" />}
           />
           <StatsCard
             title="24h Volume"
-            value={`$${formatMarketCap(stats.total24hVolume)}`}
-            change={parseFloat(stats.volume24hChange) || 0}
+            value={`$${formatMarketCap(Number(stats.total24hVolume))}`}
+            change={Number((stats as any).volume24hChange) || 0}
             icon={<BarChart3 className="h-4 w-4" />}
           />
           <StatsCard
             title="BTC Dominance"
-            value={`${parseFloat(stats.btcDominance).toFixed(2)}%`}
-            change={parseFloat(stats.btcDominanceChange) || 0}
+            value={`${Number(stats.btcDominance).toFixed(2)}%`}
+            change={Number((stats as any).btcDominanceChange) || 0}
             icon={<TrendingUp className="h-4 w-4" />}
           />
         </div>

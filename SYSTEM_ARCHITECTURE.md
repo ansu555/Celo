@@ -1,4 +1,4 @@
-# 10xSwap System Overview & Backend Architecture
+# Accorto System Overview & Backend Architecture
 
 ## Table of Contents
 1. [System Overview](#system-overview)
@@ -16,7 +16,7 @@
 
 ## System Overview
 
-10xSwap is a comprehensive DeFi aggregation platform that combines traditional DEX functionality with AI-powered trading agents. The system operates across multiple blockchain networks, providing gasless transactions through ERC-4337 account abstraction.
+Accorto is a comprehensive DeFi aggregation platform that combines traditional DEX functionality with AI-powered trading agents. The system operates across multiple blockchain networks, providing gasless transactions through ERC-4337 account abstraction.
 
 ### Core Features
 - **Multi-chain DEX aggregation** (Base, Avalanche, Avalanche Fuji)
@@ -776,7 +776,7 @@ MCP_ANALYTICS_URL=http://localhost:8080
 
 ## Conclusion
 
-The 10xSwap backend architecture provides a robust, scalable foundation for multi-chain DeFi operations with AI-powered automation. Key architectural strengths include:
+The Accorto backend architecture provides a robust, scalable foundation for multi-chain DeFi operations with AI-powered automation. Key architectural strengths include:
 
 - **Modular per-chain design** enabling easy network addition
 - **Account abstraction integration** for seamless UX
