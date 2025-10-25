@@ -1,8 +1,8 @@
-// On-chain pool data fetcher for Avalanche Fuji testnet
+// On-chain pool data fetcher for Celo networks (default Alfajores)
 // Fetches real reserve data from deployed AMM contracts
 
 import { createPublicClient, http, type Address } from 'viem'
-import { avalancheFuji } from 'viem/chains'
+import { celo, celoAlfajores } from 'viem/chains'
 import { resolveTokenBySymbol, type TokenInfo } from '../tokens'
 import FactoryAbi from '@/lib/abi/Factory.json'
 import PairAbi from '@/lib/abi/Pair.json'
@@ -11,10 +11,16 @@ import PairAbi from '@/lib/abi/Pair.json'
 const factoryAbi = FactoryAbi as any
 const pairAbi = PairAbi as any
 
-// Initialize Fuji public client
+const TARGET_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
+const targetChain = TARGET_CHAIN_ID === 42220 ? celo : celoAlfajores
+const defaultRpc = TARGET_CHAIN_ID === 42220
+  ? 'https://forno.celo.org'
+  : 'https://alfajores-forno.celo-testnet.org'
+const rpcUrl = process.env.RPC_URL_CELO || process.env.RPC_URL || defaultRpc
+
 const publicClient = createPublicClient({
-  chain: avalancheFuji,
-  transport: http(process.env.RPC_URL_FUJI || 'https://api.avax-test.network/ext/bc/C/rpc')
+  chain: targetChain,
+  transport: http(rpcUrl)
 })
 
 // Contract addresses from env
@@ -115,6 +121,13 @@ export async function fetchOnChainPool(
   tokenB: TokenInfo,
   useCache: boolean = true
 ): Promise<OnChainPool | null> {
+  if (tokenA.address === 'CELO' || tokenB.address === 'CELO') {
+    console.warn('Skipping native CELO pair for on-chain pool fetch until wrapper support is added', {
+      tokenA: tokenA.symbol,
+      tokenB: tokenB.symbol
+    })
+    return null
+  }
   // Sort tokens to create consistent pool ID
   const [token0, token1] = tokenA.address.toLowerCase() < tokenB.address.toLowerCase() 
     ? [tokenA, tokenB] 
@@ -197,11 +210,9 @@ export async function discoverOnChainPools(tokens: TokenInfo[]): Promise<OnChain
  */
 export function getStandardTokens(): TokenInfo[] {
   const tokens = [
-    resolveTokenBySymbol('WAVAX'),
-    resolveTokenBySymbol('USDC'),
-    resolveTokenBySymbol('TokenC'), // Your custom token
-    resolveTokenBySymbol('WETH.e') || resolveTokenBySymbol('WETH'),
-    resolveTokenBySymbol('USDT.e') || resolveTokenBySymbol('USDT')
+    resolveTokenBySymbol('cUSD'),
+    resolveTokenBySymbol('cEUR'),
+    resolveTokenBySymbol('cREAL')
   ].filter(Boolean) as TokenInfo[]
   
   return tokens

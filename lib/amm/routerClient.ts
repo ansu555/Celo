@@ -1,5 +1,5 @@
-import { createPublicClient, createWalletClient, http, parseUnits, Address } from 'viem'
-import { avalancheFuji } from 'viem/chains'
+import { createPublicClient, http, parseUnits, Address } from 'viem'
+import { celo, celoAlfajores } from 'viem/chains'
 import RouterAbi from '@/lib/abi/Router.json'
 import { getAmmAddresses } from './config'
 
@@ -8,10 +8,16 @@ export interface QuoteResult {
   path: string[]
 }
 
+const ROUTER_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
+const routerChain = ROUTER_CHAIN_ID === 42220 ? celo : celoAlfajores
+const defaultRouterRpc = ROUTER_CHAIN_ID === 42220
+  ? 'https://forno.celo.org'
+  : 'https://alfajores-forno.celo-testnet.org'
+
 export function getPublicClient(rpcUrl?: string) {
   return createPublicClient({
-    chain: avalancheFuji,
-    transport: http(rpcUrl || process.env.NEXT_PUBLIC_RPC_URL_FUJI || 'https://api.avax-test.network/ext/bc/C/rpc')
+    chain: routerChain,
+    transport: http(rpcUrl || process.env.NEXT_PUBLIC_RPC_URL_CELO || process.env.NEXT_PUBLIC_RPC_URL || defaultRouterRpc)
   })
 }
 

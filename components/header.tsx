@@ -20,9 +20,11 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [rules, setRules] = useState<any[]>([]);
   const { isMobile } = useViewport();
+  const { address } = useAccount();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const modeToggleRef = useRef<HTMLDivElement>(null);
-  const { address } = useAccount();
+  // Use Celo wallet address or fallback to placeholder
+  const walletAddress = address || "0x0000000000000000000000000000000000000000";
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -77,17 +79,18 @@ export function Header() {
 
   const navItems = [
     { name: "Home", href: "/" },
-    { name: "Cryptocurrencies", href: "/cryptocurrencies" },
-    { name: "Exchanges", href: "/exchanges" },
-    { name: "Agent", href: "/agent-dashboard" },
-    
+    { name: "Explore", href: "/cryptocurrencies" },
+    { name: "Trade", href: "/trade" },
+    { name: "Pool", href: "/pool" },
+    { name: "Stake", href: "/stake" },
+    { name: "Portfolio", href: "/agent-dashboard" },
   ];
 
   const saveRule = async (rule: any) => {
     // Map UI schema -> API schema
     const type = rule.strategy === 'DCA' ? 'dca' : rule.strategy === 'REBALANCE' ? 'rebalance' : 'rotate'
     const payload = {
-      ownerAddress: address || "0x0000000000000000000000000000000000000000",
+      ownerAddress: walletAddress,
       type,
       targets: Array.isArray(rule.coins) ? rule.coins : [],
       rotateTopN: rule.rotateTopN,
@@ -160,6 +163,11 @@ export function Header() {
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#F3C623] dark:to-[#F3C623]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
               </Button>
             }
+            availableCoins={[
+              { id: 'celo', symbol: 'CELO', name: 'Celo' },
+              { id: 'celo-dollar', symbol: 'cUSD', name: 'Celo Dollar' },
+              { id: 'celo-euro', symbol: 'cEUR', name: 'Celo Euro' },
+            ]}
             onPreview={(rule) => {
               toast({ title: "Preview", description: describeRule(rule) })
             }}
@@ -168,13 +176,7 @@ export function Header() {
               toast({ title: "Rule saved", description: describeRule(rule) })
             }}
           />
-          <ConnectKitButton.Custom>
-            {({ isConnected, show, truncatedAddress }) => (
-              <Button onClick={show} variant="outline" size="default">
-                {isConnected ? truncatedAddress : "Connect Wallet"}
-              </Button>
-            )}
-          </ConnectKitButton.Custom>
+          <ConnectKitButton />
           <ModeToggle />
         </div>
 
@@ -225,6 +227,11 @@ export function Header() {
                     <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#F3C623] dark:to-[#F3C623]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
                   </Button>
                 }
+                availableCoins={[
+                  { id: 'celo', symbol: 'CELO', name: 'Celo' },
+                  { id: 'celo-dollar', symbol: 'cUSD', name: 'Celo Dollar' },
+                  { id: 'celo-euro', symbol: 'cEUR', name: 'Celo Euro' },
+                ]}
                 onPreview={(rule) => {
                   toast({ title: "Preview", description: describeRule(rule) })
                 }}
@@ -233,13 +240,9 @@ export function Header() {
                   toast({ title: "Rule saved", description: describeRule(rule) })
                 }}
               />
-              <ConnectKitButton.Custom>
-                {({ isConnected, show, truncatedAddress }) => (
-                  <Button onClick={show} variant="outline" size="default" className="w-full">
-                    {isConnected ? truncatedAddress : "Connect Wallet"}
-                  </Button>
-                )}
-              </ConnectKitButton.Custom>
+              <div className="w-full">
+                <ConnectKitButton />
+              </div>
               <div className="flex justify-center">
                 <div ref={modeToggleRef} data-theme-toggle>
                   <ModeToggle />

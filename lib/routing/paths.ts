@@ -1,4 +1,4 @@
-// Multi-hop route discovery & quoting (up to configurable max hops) for Fuji pools.
+// Multi-hop route discovery & quoting (up to configurable max hops) for Celo pools.
 // Depth definition: number of pools (hops) in the route. depth=1 => single pool (direct), depth=3 => three pools (two intermediates).
 
 import { resolveTokenBySymbol, type TokenInfo } from '../tokens'
@@ -110,7 +110,9 @@ export function findBestRouteQuote(tokenIn: TokenInfo, tokenOut: TokenInfo, amou
 }
 
 // Convenience: resolve symbols then call findBestRouteQuote.
-export function findBestRouteQuoteBySymbol(tokenInSymbol: string, tokenOutSymbol: string, amountIn: bigint, maxHops: number, chainId = 43113): RouteQuote | null {
+const DEFAULT_ROUTE_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
+
+export function findBestRouteQuoteBySymbol(tokenInSymbol: string, tokenOutSymbol: string, amountIn: bigint, maxHops: number, chainId = DEFAULT_ROUTE_CHAIN_ID): RouteQuote | null {
   const tIn = resolveTokenBySymbol(tokenInSymbol, chainId)
   const tOut = resolveTokenBySymbol(tokenOutSymbol, chainId)
   if (!tIn || !tOut) return null
