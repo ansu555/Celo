@@ -1,8 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 /**
- * CoinGecko API Service - Shows ONLY Avalanche Ecosystem Tokens
- * API Key: CG-yBGPehgHHsHoKf6haCAaEAWf
+ * CoinGecko API Service - Filters to Celo ecosystem tokens only
  * Documentation: https://docs.coingecko.com/
  */
 
@@ -22,13 +21,13 @@ export const cryptoApi = createApi({
         }
     }),
     endpoints: (builder) => ({
-        // Get Avalanche ecosystem cryptocurrencies
+        // Get Celo ecosystem cryptocurrencies
         getCryptos: builder.query({
             query: (count) => ({
                 url: '/coins/markets',
                 params: {
                     vs_currency: 'usd',
-                    category: 'avalanche-ecosystem', // CoinGecko's native Avalanche filter!
+                    category: 'celo-ecosystem', // CoinGecko category for Celo assets
                     order: 'market_cap_desc',
                     per_page: count || 100,
                     page: 1,
