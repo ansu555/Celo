@@ -3,12 +3,11 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useWalletConnection } from "@/components/providers/txnlab-wallet-provider"
+import { useAccount } from 'wagmi'
 import { cn } from "@/lib/utils"
 
 export function LimitPanel() {
-  const { activeAccount } = useWalletConnection()
-  const isConnected = !!activeAccount
+  const { address: walletAddress, isConnected } = useAccount()
 
   const [fromAmount, setFromAmount] = useState("")
   // Default to a sensible placeholder price; user can edit anytime

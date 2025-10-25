@@ -3,15 +3,15 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useWalletConnection } from "@/components/providers/txnlab-wallet-provider"
+import { useAccount } from 'wagmi'
 
 export function BuyPanel() {
-  const { isConnected } = useWalletConnection()
+  const { isConnected } = useAccount()
   // amount in fiat (USD)
   const [amount, setAmount] = useState<string>("")
   const [currency, setCurrency] = useState<string>("USD")
   const [token, setToken] = useState<{ symbol: string; name: string; image: string }>(
-    { symbol: "ALGO", name: "Algorand", image: "https://cryptologos.cc/logos/algorand-algo-logo.png" }
+    { symbol: "CELO", name: "Celo", image: "https://cryptologos.cc/logos/celo-celo-logo.png" }
   )
 
   const quickSet = (val: number) => setAmount(String(val))
