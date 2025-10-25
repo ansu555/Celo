@@ -107,7 +107,7 @@ const FUJI_TOKENS: Record<string, TokenInfo> = {
   },
 };
 
-// Celo testnet tokens (Chain ID 11142220 - Alfajores)
+// Celo testnet tokens (Chain ID 11142220 - Celo Sepolia)
 const CELO_TOKENS: Record<string, TokenInfo> = {
   CELO: { symbol: "CELO", address: "CELO", decimals: 18, coingeckoId: "celo" },
   CUSD: {
@@ -128,9 +128,10 @@ const CELO_TOKENS: Record<string, TokenInfo> = {
     decimals: 18,
     coingeckoId: "celo-brazilian-real",
   },
+  // Celo Sepolia USDC (FiatTokenCeloV2_2 - verified from working transaction)
   USDC: {
     symbol: "USDC",
-    address: "0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B",
+    address: "0x98Cc94F9271e36EB1c30d77c39dCb9929D9310C4",
     decimals: 6,
     coingeckoId: "usd-coin",
   },
