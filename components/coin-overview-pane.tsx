@@ -64,6 +64,14 @@ export default function CoinOverviewPane({ coinId }: { coinId?: string }) {
   if (isLoading) return <PaneSkeleton />
   if (!coin) return <div className="text-sm text-muted-foreground">Select a coin from the right to view details.</div>
 
+  const volume24h = parseFloat(coin["24hVolume"] || 0)
+  const formatCompactUSD = (value: number) => {
+    if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
+    if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
+    if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`
+    return `$${value.toFixed(0)}`
+  }
+
   return (
     <div className="space-y-4">
       {/* Header: name + rank + autopilot */}
@@ -111,7 +119,7 @@ export default function CoinOverviewPane({ coinId }: { coinId?: string }) {
         <Card>
           <CardHeader className="py-2"><CardTitle className="text-[11px]">Volume (24h)</CardTitle></CardHeader>
           <CardContent className="pt-0 pb-3">
-            <div className="text-2xl font-bold font-mono">${(parseFloat(coin["24hVolume"]) / 1_000_000_000).toFixed(1)}B</div>
+            <div className="text-2xl font-bold font-mono" title={`$${volume24h.toLocaleString()}`}>{formatCompactUSD(volume24h)}</div>
             <CardDescription className="text-xs">
               {((parseFloat(coin["24hVolume"]) / parseFloat(coin.marketCap)) * 100).toFixed(2)}% of market cap
             </CardDescription>
