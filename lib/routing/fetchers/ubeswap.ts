@@ -1,5 +1,5 @@
 import { createPublicClient, erc20Abi, http, type Address, type PublicClient, type Transport, type Chain as ViemChain } from 'viem'
-import { celo, celoAlfajores } from 'viem/chains'
+import { getViemChainFromEnv } from '@/lib/chain'
 import PairAbi from '@/lib/abi/Pair.json'
 import FactoryAbi from '@/lib/abi/Factory.json'
 import type { Pool } from '../pools'
@@ -117,10 +117,9 @@ async function fetchPairAsPool(
 }
 
 export async function fetchUbeswapPools(options: FetchUbeswapPoolsOptions = {}): Promise<Pool[]> {
-  const chainId = options.chainId ?? Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
-  const chain = chainId === 42220 ? celo : celoAlfajores
-  const defaultRpc = chainId === 42220 ? 'https://forno.celo.org' : 'https://alfajores-forno.celo-testnet.org'
-  const rpcUrl = options.rpcUrl || process.env.RPC_URL_CELO || process.env.RPC_URL || defaultRpc
+  const chain = getViemChainFromEnv()
+  const defaultRpc = 'https://alfajores-forno.celo-testnet.org'
+  const rpcUrl = options.rpcUrl || process.env.RPC_URL_CELO || process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || defaultRpc
   const factoryAddress = options.factoryAddress || (process.env.NEXT_PUBLIC_AMM_FACTORY as Address)
 
   if (!factoryAddress) {
@@ -156,7 +155,7 @@ export async function fetchUbeswapPools(options: FetchUbeswapPoolsOptions = {}):
   const poolPromises = pairAddressesResults
     .map((res) => res?.result as Address | undefined)
     .filter((addr): addr is Address => !!addr && addr !== ZERO_ADDRESS)
-    .map((addr) => fetchPairAsPool(client, addr, chainId))
+    .map((addr) => fetchPairAsPool(client, addr, chain.id))
 
   const pools = (await Promise.all(poolPromises))
     .filter((pool): pool is Pool => !!pool && pool.reserve0 > BigInt(0) && pool.reserve1 > BigInt(0))

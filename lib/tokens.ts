@@ -81,7 +81,10 @@ function getTokenRegistry(chainId?: number): Record<string, TokenInfo> {
 
   return {
     ...DEFAULT_ALFAJORES_TOKENS,
+    // Allow overriding/adding tokens for testnets via env
     ...getEnvTokens('CELO_ALFAJORES'),
+    ...getEnvTokens('CELO_SEPOLIA'),
+    ...getEnvTokens('CELO_CUSTOM'),
     ...runtimeEntries
   }
 }

@@ -4,6 +4,17 @@ import { DEXAggregator } from '@/lib/routing/aggregator'
 import { resolveTokenBySymbol } from '@/lib/tokens'
 
 async function main() {
+  // Provide sane defaults if env vars are not set
+  if (!process.env.NEXT_PUBLIC_AMM_FACTORY) {
+    process.env.NEXT_PUBLIC_AMM_FACTORY = '0x62d5b84bE28a183aBB507E125B384122D2C25fAE'
+  }
+  if (!process.env.NEXT_PUBLIC_AMM_ROUTER) {
+    process.env.NEXT_PUBLIC_AMM_ROUTER = '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121'
+  }
+  if (!process.env.CHAIN_ID && !process.env.NEXT_PUBLIC_CHAIN_ID) {
+    process.env.NEXT_PUBLIC_CHAIN_ID = '44787'
+  }
+
   const amountIn = '10'
   const tokenInSymbol = 'cUSD'
   const tokenOutSymbol = 'cEUR'

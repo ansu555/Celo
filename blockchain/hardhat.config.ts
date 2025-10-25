@@ -1,4 +1,5 @@
 import type { HardhatUserConfig } from "hardhat/config";
+import 'dotenv/config'
 
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable } from "hardhat/config";
@@ -29,6 +30,18 @@ const config: HardhatUserConfig = {
     hardhatOp: {
       type: "edr-simulated",
       chainType: "op",
+    },
+    alfajores: {
+      type: "http",
+      chainType: "l1",
+      url: configVariable("ALFAJORES_RPC_URL"),
+      accounts: [configVariable("ALFAJORES_PRIVATE_KEY")],
+    },
+    celosepolia: {
+      type: "http",
+      chainType: "l1",
+      url: configVariable("CELO_SEPOLIA_RPC_URL"),
+      accounts: [configVariable("CELO_SEPOLIA_PRIVATE_KEY")],
     },
     sepolia: {
       type: "http",

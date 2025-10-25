@@ -2,7 +2,7 @@
 // Fetches real reserve data from deployed AMM contracts
 
 import { createPublicClient, http, type Address } from 'viem'
-import { celo, celoAlfajores } from 'viem/chains'
+import { getViemChainFromEnv } from '@/lib/chain'
 import { resolveTokenBySymbol, type TokenInfo } from '../tokens'
 import FactoryAbi from '@/lib/abi/Factory.json'
 import PairAbi from '@/lib/abi/Pair.json'
@@ -11,12 +11,9 @@ import PairAbi from '@/lib/abi/Pair.json'
 const factoryAbi = FactoryAbi as any
 const pairAbi = PairAbi as any
 
-const TARGET_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
-const targetChain = TARGET_CHAIN_ID === 42220 ? celo : celoAlfajores
-const defaultRpc = TARGET_CHAIN_ID === 42220
-  ? 'https://forno.celo.org'
-  : 'https://alfajores-forno.celo-testnet.org'
-const rpcUrl = process.env.RPC_URL_CELO || process.env.RPC_URL || defaultRpc
+const targetChain = getViemChainFromEnv()
+const fallbackRpc = 'https://alfajores-forno.celo-testnet.org'
+const rpcUrl = process.env.RPC_URL_CELO || process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || fallbackRpc
 
 const publicClient = createPublicClient({
   chain: targetChain,
