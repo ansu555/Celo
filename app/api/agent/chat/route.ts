@@ -95,7 +95,8 @@ export async function POST(req: Request) {
     
     // Address query intent (bypass agent for instant response)
     const addressIntent = /\b(what.{0,20}(is|s).{0,20}(my|the).{0,20}(address|wallet)|my.{0,10}address|my.{0,10}wallet|show.{0,10}address|get.{0,10}address)\b/i.test(lastUserMsg)
-    
+      || /^\s*(address|wallet)\s*[\?\.!]?$/i.test(lastUserMsg) // also match single-word queries like "address" or "wallet"
+    console.log('Address intent detected:', addressIntent)
     if (addressIntent) {
       try {
         const { getAddress, getEOAAddress } = await getAgent(chainOverride)
@@ -138,7 +139,7 @@ export async function POST(req: Request) {
     
     // Balance query intent (bypass agent for instant response)
     const balanceIntent = /\b(what.{0,20}(is|s).{0,20}(my|the).{0,20}balance|my.{0,10}balance|show.{0,10}balance|get.{0,10}balance|check.{0,10}balance|balances?)\b/i.test(lastUserMsg)
-    
+    console.log('Balance intent detected:', balanceIntent)
     if (balanceIntent) {
       try {
         const { getAddress, getBalance } = await getAgent(chainOverride)
@@ -176,8 +177,8 @@ export async function POST(req: Request) {
           const formattedBal = balNum.toFixed(4)
           
           let response = `💰 **Your Balances:**\n\n`
-          response += `**Native Token (AVAX):**\n\`${formattedBal} AVAX\`\n\n`
-          response += `📍 Account: \`${addr}\``
+          // response += `**Native Token (AVAX):**\n\`${formattedBal} AVAX\`\n\n`
+          // response += `📍 Account: \`${addr}\``
           
           if (balNum === 0) {
             response += '\n\n💡 *Fund your account to start making transactions.*'
@@ -214,7 +215,7 @@ export async function POST(req: Request) {
     const blacklistedWords = ['previous', 'next', 'last', 'first', 'current', 'latest', 'recent', 'today', 'yesterday', 'tomorrow', 'this', 'that', 'these', 'those', 'same', 'other', 'another', 'some', 'any', 'all', 'each', 'every', 'both', 'few', 'many', 'more', 'most', 'several', 'such']
     const coinName = mcpCoinMatch?.[1]?.toLowerCase()
     const isValidCoin = coinName && !blacklistedWords.includes(coinName)
-    
+    console.log('MCP intent:', mcpIntent, 'Coin match:', mcpCoinMatch, 'Is valid coin:', isValidCoin)
     if (mcpIntent && mcpCoinMatch && isValidCoin) {
       try {
         // Basic health check first (non-fatal if it fails, we continue and surface error)
@@ -286,6 +287,7 @@ export async function POST(req: Request) {
     }
     
     // === AUTO-PILOT RULE SUGGESTION ===
+    console.log('Rule suggestion intent:', ruleIntent, 'Coin match:', mcpCoinMatch, 'Is valid coin:', isValidCoin)
     if (ruleIntent && mcpCoinMatch && isValidCoin) {
       try {
         const coinRaw = (mcpCoinMatch[1] || '').trim()
@@ -357,7 +359,7 @@ export async function POST(req: Request) {
       lastUserMsg.match(/(?:history|historical|past|data)\s+(?:of|for|on)?\s*([a-z0-9\-]{2,40})/i) ||  // "history of bitcoin"
       lastUserMsg.match(/([a-z0-9\-]{2,40})\s+(?:history|historical|past\s+data|price\s+history)/i) ||  // "bitcoin history"
       lastUserMsg.match(/(\d+)\s+(?:year|month|day)s?\s+(?:of|for)?\s*([a-z0-9\-]{2,40})/i)            // "1 year bitcoin"
-    
+    console.log('Historical data intent:', historyIntent, 'Match:', historyMatch)
     if (historyIntent && historyMatch) {
       try {
         // Extract coin name and time period
@@ -425,6 +427,7 @@ export async function POST(req: Request) {
     
     // Top coins with dynamic count - "top 5 coins", "show me 15 cryptocurrencies", etc.
     let topCoinsMatch = text.match(/top\s+(\d+)\s+(?:coin|crypto|cryptocurrency|token)/i)
+    console.log('Top coins match:', topCoinsMatch)
     if (!topCoinsMatch) topCoinsMatch = text.match(/show\s+(?:me\s+)?(\d+)\s+(?:coin|crypto|cryptocurrency|token)/i)
     if (!topCoinsMatch) topCoinsMatch = text.match(/(\d+)\s+(?:top|best)\s+(?:coin|crypto|cryptocurrency)/i)
     
@@ -504,7 +507,7 @@ export async function POST(req: Request) {
         // Continue to agent if RPC fails
       }
     }
-    
+    console.log('No early intent matched, proceeding to agent...', text )
     // Balance check - "my balance", "balance", "show balance" (early detection)
     if (/\b(balance|balances)\b/.test(text)) {
       try {
@@ -660,6 +663,7 @@ export async function POST(req: Request) {
     // Transfer detection - "transfer 0.01 AVAX to 0x..." (early detection)
     const transferRe = /transfer\s+(\d+(?:\.\d+)?)\s*(?:([A-Za-z]{2,6}))?\s*(?:tokens?)?\s*(?:to|=>)\s*(0x[a-fA-F0-9]{40})/
     const tr = text.match(transferRe)
+    console.log('Transfer match:', tr)
     if (tr) {
       const amount = tr[1]
       const symbol = tr[2] || 'AVAX' // Default to AVAX if no symbol specified
@@ -768,13 +772,142 @@ export async function POST(req: Request) {
       }
     }
 
+    // === SWAP DETECTION (early-detection) - "swap 0.5 CELO to USDC" ===
+    const swapRe = /swap\s+(\d+(?:\.\d+)?)\s*([A-Za-z]{2,10})\s*(?:to|for|->)\s*([A-Za-z]{2,10})/i
+    const swMatch = lastUserMsg.match(swapRe)
+    console.log('🔄 [SWAP] Early detection match:', swMatch)
+    
+    if (swMatch) {
+      const amount = swMatch[1]
+      const fromSym = (swMatch[2] || '').toUpperCase()
+      const toSym = (swMatch[3] || '').toUpperCase()
+      
+      console.log(`🔄 [SWAP] Attempting swap: ${amount} ${fromSym} → ${toSym}`)
+      
+      try {
+        // Step 1: Try customSwap first (preferred for chains like Fuji, Celo)
+        console.log('🔄 [SWAP] Step 1: Trying customSwap...')
+        try {
+          const customResult = await customSwap({ 
+            tokenInSymbol: fromSym, 
+            tokenOutSymbol: toSym, 
+            amount, 
+            slippageBps: 100, 
+            wait: true 
+          })
+          console.log('✅ [SWAP] customSwap succeeded:', customResult.hash)
+          return NextResponse.json({ 
+            ok: true, 
+            content: `✅ **Swap Successful!**\n\n${amount} ${fromSym} → ${toSym}\n\n📝 Transaction: \`${customResult.hash}\`\n\n*Executed via customSwap*`,
+            threadId: config.configurable.thread_id 
+          })
+        } catch (customErr: any) {
+          console.error('❌ [SWAP] customSwap failed:', customErr?.message || customErr)
+          
+          // Step 2: Fallback to smartSwap (aggregator/legacy)
+          console.log('🔄 [SWAP] Step 2: Trying smartSwap...')
+          try {
+            const legacyResult = await smartSwap({ 
+              tokenInSymbol: fromSym, 
+              tokenOutSymbol: toSym, 
+              amount, 
+              slippage: 0.5, 
+              wait: true 
+            })
+            console.log('✅ [SWAP] smartSwap succeeded:', legacyResult.hash)
+            return NextResponse.json({ 
+              ok: true, 
+              content: `✅ **Swap Successful!**\n\n${amount} ${fromSym} → ${toSym}\n\n📝 Transaction: \`${legacyResult.hash}\`\n\n*Executed via smartSwap*`,
+              threadId: config.configurable.thread_id 
+            })
+          } catch (legacyErr: any) {
+            console.error('❌ [SWAP] smartSwap failed:', legacyErr?.message || legacyErr)
+            
+            // Step 3: Last resort - resolve token addresses and retry smartSwap with addresses
+            console.log('🔄 [SWAP] Step 3: Resolving token addresses and retrying...')
+            try {
+              const { getChainInfo } = await getAgent(chainOverride)
+              const info = await getChainInfo()
+              console.log(`🔄 [SWAP] Chain info: ${info.chainId}`)
+              
+              const inToken = resolveTokenBySymbol(fromSym, info.chainId)
+              const outToken = resolveTokenBySymbol(toSym, info.chainId)
+              
+              console.log(`🔄 [SWAP] Resolved tokens:`, {
+                in: inToken ? `${inToken.symbol} (${inToken.address})` : 'NOT FOUND',
+                out: outToken ? `${outToken.symbol} (${outToken.address})` : 'NOT FOUND'
+              })
+              
+              if (!inToken) {
+                console.error(`❌ [SWAP] Could not resolve input token: ${fromSym}`)
+              }
+              if (!outToken) {
+                console.error(`❌ [SWAP] Could not resolve output token: ${toSym}`)
+              }
+              
+              // Prepare addresses (undefined for native tokens like AVAX/CELO)
+              const tokenInAddress = inToken && inToken.address !== 'AVAX' && inToken.address !== 'CELO' 
+                ? (inToken.address as Address) 
+                : undefined
+              const tokenOutAddress = outToken && outToken.address !== 'AVAX' && outToken.address !== 'CELO'
+                ? (outToken.address as Address) 
+                : undefined
+              
+              console.log(`🔄 [SWAP] Retrying smartSwap with addresses:`, {
+                tokenInAddress: tokenInAddress || 'native',
+                tokenOutAddress: tokenOutAddress || 'native'
+              })
+              
+              // Retry smartSwap with resolved addresses (some implementations accept addresses)
+              const resolvedResult = await smartSwap({
+                tokenInSymbol: fromSym,
+                tokenOutSymbol: toSym,
+                tokenInAddress,
+                tokenOutAddress,
+                amount,
+                slippage: 0.5,
+                wait: true
+              } as any)
+              
+              console.log('✅ [SWAP] smartSwap with resolved tokens succeeded:', resolvedResult.hash)
+              return NextResponse.json({ 
+                ok: true, 
+                content: `✅ **Swap Successful!**\n\n${amount} ${fromSym} → ${toSym}\n\n📝 Transaction: \`${resolvedResult.hash}\`\n\n*Executed via smartSwap (resolved tokens)*`,
+                threadId: config.configurable.thread_id 
+              })
+            } catch (resolveErr: any) {
+              console.error('❌ [SWAP] Token resolution and retry failed:', resolveErr?.message || resolveErr)
+              
+              // All swap attempts failed - return comprehensive error
+              return NextResponse.json({
+                ok: false,
+                error: `❌ **Swap Failed**\n\nCould not execute swap: ${amount} ${fromSym} → ${toSym}\n\n**Errors:**\n• customSwap: ${customErr?.message || String(customErr)}\n• smartSwap: ${legacyErr?.message || String(legacyErr)}\n• Resolved retry: ${resolveErr?.message || String(resolveErr)}\n\n💡 Check token symbols and balances. If on testnet, ensure tokens are available.`,
+                threadId: config.configurable.thread_id
+              }, { status: 500 })
+            }
+          }
+        }
+      } catch (e: any) {
+        console.error('❌ [SWAP] Outer handler error:', e?.message || e)
+        return NextResponse.json({
+          ok: false,
+          error: `❌ Swap handler error: ${e?.message || String(e)}`,
+          threadId: config.configurable.thread_id
+        }, { status: 500 })
+      }
+    }
+// ...existing code...
     // Execute agent and collect the final response
     // Helper: simple intent fallback for common actions
+    console.log('No specific intent matched, checking fallback intents...tytfyfhf')
   const fallback = async (): Promise<string | null> => {
+    console.log('Running fallback intent checks...')
       const lastUser = [...incoming].reverse().find((m) => m.role === "user")
+      console.log('Last user message for fallback:', lastUser)
       const text = (lastUser?.content || "").toLowerCase()
+      console.log('Fallback text:', text)
       if (!text) return null
-
+      console.log('Executing fallback intent checks for text:', text)
       // Helper: decide which address to use based on phrasing
       const resolveAddressContext = async () => {
         const { getAddresses } = await getAgent(chainOverride)
@@ -805,7 +938,7 @@ export async function POST(req: Request) {
         }
         return { target: smart, label: 'Smart Account', missing: false }
       }
-
+      console.log('Fallback intent check for:', text)
       // Address
       if (/\b(address|wallet)\b/.test(text)) {
   const { getAddresses } = await getAgent(chainOverride)
@@ -817,7 +950,7 @@ export async function POST(req: Request) {
           clientEOA ? `Connected EOA (your wallet): ${clientEOA}` : undefined,
         ].filter(Boolean).join('\n')
       }
-
+      console.log('No fallback intent matched for:', text)
       // Market data and prices
     if (/\b(price|prices?|market|market data|top|tokens?)\b/.test(text)) {
   const { getTokenPrice, getMarketData } = await getAgent(chainOverride)
@@ -1028,7 +1161,7 @@ export async function POST(req: Request) {
           return `❌ Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease check your balance and try again.`
         }
       }
-
+      console.log('No simple transfer detected, checking advanced patterns.')
       // Enhanced Smart Transfer Patterns
       // Batch transfer: "batch transfer 0.01 ETH to 0x... and 0.02 USDC to 0x..."
       const batchTransferRe = /batch\s+transfer\s+(.+?)(?:\s+and\s+(.+))?/
@@ -1160,35 +1293,70 @@ export async function POST(req: Request) {
       // Swap: "swap 5 USDC to ETH"
       const swapRe = /swap\s+(\d+(?:\.\d+)?)\s*([A-Za-z]{2,6})\s*(?:to|for|->)\s*([A-Za-z]{2,6})/
       const sw = lastUser!.content.match(swapRe)
+
+      console.log('Swap intent detected:', sw)
       if (sw) {
         const amount = sw[1]
-        const fromSym = sw[2]
-        const toSym = sw[3]
-        // Try custom swap first (Fuji). Fallback to legacy smartSwap if custom fails for non-Fuji chains or config issues.
+        // Normalize symbols (uppercase) for downstream helpers
+        const fromSym = (sw[2] || '').toUpperCase()
+        const toSym = (sw[3] || '').toUpperCase()
+
+        // Try customSwap first (preferred on some chains), then fallback to smartSwap.
+        // Keep this inside fallback() so we return a user-friendly string.
         try {
-          const custom = await customSwap({ tokenInSymbol: fromSym, tokenOutSymbol: toSym, amount, slippageBps: 100, wait: true })
-          return `Custom swap submitted. Tx hash: ${custom.hash}`
-        } catch (e: any) {
-          // Attempt legacy aggregator swap if available
           try {
-            const legacy = await smartSwap({ tokenInSymbol: fromSym.toUpperCase(), tokenOutSymbol: toSym.toUpperCase(), amount, slippage: 0.5, wait: true })
-            return `Legacy swap submitted. Tx hash: ${legacy.hash}`
-          } catch (e2: any) {
-            return `Swap failed. Custom error: ${e?.message || e}. Legacy error: ${e2?.message || e2}`
+            const custom = await customSwap({ tokenInSymbol: fromSym, tokenOutSymbol: toSym, amount, slippageBps: 100, wait: true })
+            return `✅ Custom swap submitted. Tx hash: ${custom.hash}`
+          } catch (customErr: any) {
+            console.log('customSwap failed, falling back to smartSwap:', customErr?.message || customErr)
+            try {
+              const legacy = await smartSwap({ tokenInSymbol: fromSym, tokenOutSymbol: toSym, amount, slippage: 0.5, wait: true })
+              return `✅ Legacy swap submitted. Tx hash: ${legacy.hash}`
+            } catch (legacyErr: any) {
+              // Last effort: resolve token addresses and retry smartSwap by addresses if smartSwap supports it
+              try {
+                const { getChainInfo } = await getAgent(chainOverride)
+                const info = await getChainInfo()
+                const inToken = resolveTokenBySymbol(fromSym, info.chainId)
+                const outToken = resolveTokenBySymbol(toSym, info.chainId)
+
+                const tokenInAddress = inToken && inToken.address !== 'AVAX' ? (inToken.address as Address) : undefined
+                const tokenOutAddress = outToken && outToken.address !== 'AVAX' ? (outToken.address as Address) : undefined
+
+                // Attempt a smartSwap using resolved addresses (some implementations accept addresses)
+                const legacyByAddr = await smartSwap({
+                  tokenInSymbol: fromSym,
+                  tokenOutSymbol: toSym,
+                  tokenInAddress,
+                  tokenOutAddress,
+                  amount,
+                  slippage: 0.5,
+                  wait: true
+                } as any)
+                return `✅ Swap submitted (resolved tokens). Tx hash: ${legacyByAddr.hash}`
+              } catch (resolveErr: any) {
+                console.error('Swap resolution error in fallback:', resolveErr)
+                return `❌ Swap failed. customSwap: ${customErr?.message || String(customErr)}; smartSwap: ${legacyErr?.message || String(legacyErr)}; resolve: ${resolveErr?.message || String(resolveErr)}`
+              }
+            }
           }
+        } catch (e: any) {
+          return `❌ Swap handler error: ${e?.message || String(e)}`
         }
       }
 
       return null
     }
-
+    console.log('No fallback intent matched at all.')
     if (!agent) {
+      console.log('No agent configured, checking for fallback response. eshan')
       const fb = await fallback()
       if (fb) return NextResponse.json({ ok: true, content: fb, threadId: (config as any).configurable.thread_id })
   return NextResponse.json({ ok: false, error: "LLM not configured. Set OPENROUTER_API_KEY or OPENAI_API_KEY, or use simple commands: 'address', 'balance', 'transfer 0.01 to 0x..', 'swap 5 USDC to WETH'." }, { status: 429 })
     }
 
     try {
+      console.log('Invoking agent with messages:')
       const result = await agent.invoke({ messages }, config as any)
       const outMsgs = (result as any)?.messages as BaseMessage[] | undefined
       const last = Array.isArray(outMsgs) && outMsgs.length ? outMsgs[outMsgs.length - 1] : undefined

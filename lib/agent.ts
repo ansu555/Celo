@@ -7,6 +7,33 @@ import { Agentkit } from '@0xgasless/agentkit'
 import { resolveTokenBySymbol } from './tokens'
 import { customSwapFlow } from './customSwap'
 
+// Define Celo testnet (Alfajores) with chain ID 11142220
+const celoCustom: Chain = {
+  id: 11142220,
+  name: 'Celo Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'CELO',
+    symbol: 'CELO',
+  },
+  rpcUrls: {
+    default: {
+      http: ['http://forno.celo-sepolia.celo-testnet.org'],
+    },
+    public: {
+      http: ['http://forno.celo-sepolia.celo-testnet.org'],
+    },
+  },
+  blockExplorers: {
+    default: { name: 'CeloScan Testnet', url: 'https://alfajores.celoscan.io' },
+  },
+  contracts: {
+    multicall3: {
+      address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+      blockCreated: 13112599,
+    },
+  },
+}
 
 // Minimal helper to read required envs and ensure they are present
 function getEnv(name: string, required = true): string | undefined {
@@ -15,10 +42,11 @@ function getEnv(name: string, required = true): string | undefined {
   return v
 }
 
-// Chain selection: default to Avalanche Fuji unless CHAIN_ID selects Avalanche mainnet
+// Chain selection: support Avalanche and Celo
 function getChain(): Chain {
   const id = Number(process.env.CHAIN_ID || 43113)
   if (id === 43114) return avalanche
+  if (id === 11142220) return celoCustom
   return avalancheFuji
 }
 
@@ -31,29 +59,38 @@ async function buildAgent(chainIdOverride?: number) {
   const PK_RAW = getEnv('PRIVATE_KEY') as string
   const PRIVATE_KEY = (PK_RAW.startsWith('0x') ? PK_RAW : `0x${PK_RAW}`) as `0x${string}`
   // Dynamic runtime; defaults to Fuji if CHAIN_ID not provided
-  const CHAIN_ID = Number((chainIdOverride ?? process.env.CHAIN_ID) || 43113)
-  const chain = CHAIN_ID === 43114 ? avalanche : avalancheFuji
-
+  let CHAIN_ID = Number(
+    (chainIdOverride ?? process.env.CHAIN_ID) || 11142220
+  );
+  CHAIN_ID = 11142220;
+  let chain: Chain
+  if (CHAIN_ID === 43114) chain = avalanche
+  else if (CHAIN_ID === 11142220) chain = celoCustom
+  else chain = avalancheFuji
+  console.log(`Building agent for chain ID ${CHAIN_ID} (${chain.name})`)
   // Chain-specific RPCs
   const rpcByChain: Record<number, string | undefined> = {
     43113: process.env.RPC_URL_FUJI,
     43114: process.env.RPC_URL_AVALANCHE,
+    11142220: process.env.RPC_URL_CELO || 'http://forno.celo-sepolia.celo-testnet.org',
   }
   const RPC_RAW = rpcByChain[CHAIN_ID] || process.env.RPC_URL
-  if (!RPC_RAW) throw new Error('Missing RPC_URL for selected chain. Provide RPC_URL_FUJI or RPC_URL_AVALANCHE.')
+  if (!RPC_RAW) throw new Error('Missing RPC_URL for selected chain. Provide RPC_URL_FUJI, RPC_URL_AVALANCHE, or RPC_URL_CELO.')
   const RPC_URL = (RPC_RAW.startsWith('http://') || RPC_RAW.startsWith('https://')) ? RPC_RAW : `https://${RPC_RAW}`
 
   // Chain-specific GASLESS API key and paymaster
   const apiKeyByChain: Record<number, string | undefined> = {
     43113: process.env.GASLESS_API_KEY_FUJI || process.env.GASLESS_API_KEY,
     43114: process.env.GASLESS_API_KEY_AVALANCHE || process.env.GASLESS_API_KEY,
+    11142220: process.env.GASLESS_API_KEY_CELO || process.env.GASLESS_API_KEY,
   }
   const GASLESS_API_KEY = apiKeyByChain[CHAIN_ID]
-  if (!GASLESS_API_KEY) throw new Error('Missing GASLESS_API_KEY for selected chain. Provide GASLESS_API_KEY_FUJI, GASLESS_API_KEY_AVALANCHE, or GASLESS_API_KEY.')
+  if (!GASLESS_API_KEY) throw new Error('Missing GASLESS_API_KEY for selected chain. Provide GASLESS_API_KEY_FUJI, GASLESS_API_KEY_AVALANCHE, GASLESS_API_KEY_CELO, or GASLESS_API_KEY.')
 
   const paymasterByChain: Record<number, string | undefined> = {
     43113: process.env.GASLESS_PAYMASTER_URL_FUJI || process.env.GASLESS_PAYMASTER_URL,
     43114: process.env.GASLESS_PAYMASTER_URL_AVALANCHE || process.env.GASLESS_PAYMASTER_URL,
+    11142220: process.env.GASLESS_PAYMASTER_URL_CELO || process.env.GASLESS_PAYMASTER_URL,
   }
   const GASLESS_PAYMASTER_URL = paymasterByChain[CHAIN_ID]
 
@@ -83,7 +120,12 @@ async function buildAgent(chainIdOverride?: number) {
     try {
       const rpcChainId = await publicClient.getChainId()
     if (rpcChainId !== chain.id) {
-  const name = chain.id === 43114 ? 'Avalanche' : 'Avalanche Fuji'
+        const chainNames: Record<number, string> = {
+          43113: 'Avalanche Fuji',
+          43114: 'Avalanche Mainnet',
+          11142220: 'Celo Testnet'
+        }
+        const name = chainNames[chain.id] || `Chain ${chain.id}`
         throw new Error(
           `RPC chainId ${rpcChainId} does not match expected ${chain.id} (${name}). ` +
           `Check CHAIN_ID and RPC_URL.`
@@ -99,17 +141,26 @@ async function buildAgent(chainIdOverride?: number) {
     }
 
   // Initialize 0xGasless Agentkit using wallet (Agentkit manages smart account internally)
-    const agentkit = await Agentkit.configureWithWallet({
-      privateKey: PRIVATE_KEY,
-      rpcUrl: RPC_URL,
-      apiKey: GASLESS_API_KEY,
-      chainID: CHAIN_ID,
-      // Best-effort pass-through; SDK may ignore if not required
-      ...(GASLESS_PAYMASTER_URL ? { paymasterUrl: GASLESS_PAYMASTER_URL } as any : {}),
-    } as any)
+    // Note: For Celo (11142220), Agentkit is not supported, so we use direct wallet operations
+    let agentkit: any = null
+    if (CHAIN_ID !== 11142220) {
+      agentkit = await Agentkit.configureWithWallet({
+        privateKey: PRIVATE_KEY,
+        rpcUrl: RPC_URL,
+        apiKey: GASLESS_API_KEY,
+        chainID: CHAIN_ID,
+        // Best-effort pass-through; SDK may ignore if not required
+        ...(GASLESS_PAYMASTER_URL ? { paymasterUrl: GASLESS_PAYMASTER_URL } as any : {}),
+      } as any)
+    }
 
     // Helpers
     async function getAddress(): Promise<Address> {
+      // For Celo (unsupported by Agentkit), use EOA directly
+      if (CHAIN_ID === 11142220) {
+        return account.address as Address
+      }
+      
       // Prefer the smart account address from Agentkit if available.
       // However, some Agentkit/contract setups may fail when resolving a counterfactual
       // address (see errors about getAddressForCounterFactualAccount). In that case,
@@ -244,6 +295,34 @@ async function buildAgent(chainIdOverride?: number) {
     async function smartTransfer(opts: { tokenAddress?: Address; amount: string; destination: Address; wait?: boolean }): Promise<{ hash: string; details: any }> {
       const { tokenAddress, amount, destination, wait } = opts
       try {
+        // For Celo (unsupported by Agentkit), use direct EOA wallet
+        if (CHAIN_ID === 11142220) {
+          if (tokenAddress) {
+            // ERC20 transfer using EOA
+            const decimals = await publicClient.readContract({
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: 'decimals',
+            }) as unknown as number
+            const value = parseUnits(amount, decimals)
+            const hash = await eoaClient.writeContract({
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: 'transfer',
+              args: [destination, value],
+            })
+            if (wait) await publicClient.waitForTransactionReceipt({ hash })
+            return { hash, details: { tokenAddress, amount, destination, wait } }
+          } else {
+            // Native CELO transfer via EOA
+            const value = parseUnits(amount, 18)
+            const hash = await eoaClient.sendTransaction({ to: destination, value })
+            if (wait) await publicClient.waitForTransactionReceipt({ hash })
+            return { hash, details: { amount, destination, wait } }
+          }
+        }
+        
+        // For Avalanche, use Agentkit smart account
         const sa = (agentkit as any)?.smartAccount
         if (!sa) throw new Error('Smart account not available. Check GASLESS_API_KEY, RPC_URL, CHAIN_ID, and paymaster settings.')
 
@@ -301,10 +380,10 @@ async function buildAgent(chainIdOverride?: number) {
       }
     }
 
-    // Swap is chain-aware. Enabled on Avalanche mainnet only (via 0x); disabled on Fuji.
+    // Swap is chain-aware. Enabled on Avalanche mainnet only (via 0x); disabled on Fuji and Celo.
     async function smartSwap(opts: { tokenInSymbol: string; tokenOutSymbol: string; amount: string; slippage?: number; wait?: boolean }): Promise<{ hash: string; details: any }> {
-      if (chain.id === 43113) {
-        throw new Error('Swap is not available on Avalanche Fuji in this app')
+      if (chain.id === 43113 || chain.id === 11142220) {
+        throw new Error(`Swap via aggregator is not available on ${chain.name}. Use customSwap instead.`)
       }
       const isAvax = chain.id === 43114
       if (!isAvax) throw new Error('Unsupported chain for swap - only Avalanche mainnet is supported')
@@ -366,8 +445,12 @@ async function buildAgent(chainIdOverride?: number) {
 
     function getChainInfo() {
   const chainId = chain.id
-  const chainName = ({ 43113: 'Avalanche Fuji', 43114: 'Avalanche' } as Record<number, string>)[chainId] || `Chain ${chainId}`
-  const nativeSymbol = 'AVAX'
+  const chainName = ({ 
+    43113: 'Avalanche Fuji', 
+    43114: 'Avalanche',
+    11142220: 'Celo Testnet'
+  } as Record<number, string>)[chainId] || `Chain ${chainId}`
+  const nativeSymbol = chainId === 11142220 ? 'CELO' : 'AVAX'
       return { chainId, chainName, nativeSymbol }
     }
 
@@ -677,34 +760,56 @@ async function buildAgent(chainIdOverride?: number) {
       }
     }
 
-    // Custom swap (Fuji-focused) using our proven working approach.
+    // Custom swap (Fuji-focused and Celo-compatible) using our proven working approach.
     async function customSwap(opts: { tokenInSymbol: string; tokenOutSymbol: string; amount: string; slippageBps?: number; wait?: boolean }): Promise<{ hash: string; details: any }> {
       try {
         // Use the exact same approach as the working direct API
-        const { createPublicClient, createWalletClient, http, parseEther, formatEther, getContract } = await import('viem')
+        const { createPublicClient, createWalletClient, http, parseEther, parseUnits, formatEther, formatUnits, getContract } = await import('viem')
         const { privateKeyToAccount } = await import('viem/accounts')
-        const { avalancheFuji } = await import('viem/chains')
         
         const account = privateKeyToAccount(`0x${process.env.PRIVATE_KEY}`)
         
+        // Chain-specific configuration
+        let routerAddress: `0x${string}`
+        let rpcUrl: string
+        let tokenIn: `0x${string}` | undefined
+        let tokenOut: `0x${string}` | undefined
+        
+        if (chain.id === 11142220) {
+          // Celo Testnet - use Ubeswap router
+          routerAddress = process.env.NEXT_PUBLIC_CELO_DEX_ROUTER as `0x${string}` || '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121' as `0x${string}` // Ubeswap V2 Router
+          rpcUrl = process.env.RPC_URL_CELO || 'http://forno.celo-sepolia.celo-testnet.org'
+          
+          // Resolve Celo tokens
+          const tokenInInfo = resolveTokenBySymbol(opts.tokenInSymbol, chain.id)
+          const tokenOutInfo = resolveTokenBySymbol(opts.tokenOutSymbol, chain.id)
+          
+          if (!tokenInInfo || !tokenOutInfo) {
+            throw new Error(`Token not found: ${!tokenInInfo ? opts.tokenInSymbol : opts.tokenOutSymbol}`)
+          }
+          
+          // Handle native CELO (no address needed for native)
+          tokenIn = tokenInInfo.address === 'CELO' ? undefined : tokenInInfo.address as `0x${string}`
+          tokenOut = tokenOutInfo.address === 'CELO' ? undefined : tokenOutInfo.address as `0x${string}`
+          
+        } else {
+          // Avalanche Fuji
+          routerAddress = process.env.NEXT_PUBLIC_AMM_ROUTER as `0x${string}`
+          rpcUrl = process.env.NEXT_PUBLIC_RPC_URL_FUJI!
+          tokenIn = (opts.tokenInSymbol === 'WAVAX' ? process.env.NEXT_PUBLIC_TOKEN_A : process.env.NEXT_PUBLIC_TOKEN_B) as `0x${string}`
+          tokenOut = (opts.tokenOutSymbol === 'USDC' ? process.env.NEXT_PUBLIC_TOKEN_B : process.env.NEXT_PUBLIC_TOKEN_A) as `0x${string}`
+        }
+
         const publicClient = createPublicClient({
-          chain: avalancheFuji,
-          transport: http(process.env.NEXT_PUBLIC_RPC_URL_FUJI)
+          chain,
+          transport: http(rpcUrl)
         })
 
         const walletClient = createWalletClient({
           account,
-          chain: avalancheFuji,
-          transport: http(process.env.NEXT_PUBLIC_RPC_URL_FUJI)
+          chain,
+          transport: http(rpcUrl)
         })
-
-        const routerAddress = process.env.NEXT_PUBLIC_AMM_ROUTER as `0x${string}`
-        const tokenA = process.env.NEXT_PUBLIC_TOKEN_A as `0x${string}` // WAVAX
-        const tokenB = process.env.NEXT_PUBLIC_TOKEN_B as `0x${string}` // USDC
-
-        // Simple token mapping
-        const tokenIn = opts.tokenInSymbol === 'WAVAX' ? tokenA : tokenB
-        const tokenOut = opts.tokenOutSymbol === 'USDC' ? tokenB : tokenA
 
         const ROUTER_ABI = [
           {
@@ -737,8 +842,11 @@ async function buildAgent(chainIdOverride?: number) {
           client: { public: publicClient, wallet: walletClient }
         })
 
-        const amountIn = parseEther(opts.amount)
-        const path = [tokenIn, tokenOut]
+        // Get token info for proper decimal handling
+        const tokenInInfo = resolveTokenBySymbol(opts.tokenInSymbol, chain.id)!
+        const amountIn = parseUnits(opts.amount, tokenInInfo.decimals)
+        
+        const path = [tokenIn!, tokenOut!]
         const slippageBps = opts.slippageBps ?? 100
         
         // Get expected output and apply slippage
@@ -760,14 +868,16 @@ async function buildAgent(chainIdOverride?: number) {
           await publicClient.waitForTransactionReceipt({ hash })
         }
 
+        const tokenOutInfo = resolveTokenBySymbol(opts.tokenOutSymbol, chain.id)!
         return {
           hash,
           details: {
-            amountIn: formatEther(amountIn),
-            expectedOut: formatEther(amounts[1]),
-            minOut: formatEther(amountOutMin),
+            amountIn: formatUnits(amountIn, tokenInInfo.decimals),
+            expectedOut: formatUnits(amounts[1], tokenOutInfo.decimals),
+            minOut: formatUnits(amountOutMin, tokenOutInfo.decimals),
             path,
-            slippageBps
+            slippageBps,
+            chain: chain.name
           }
         }
         
@@ -782,6 +892,7 @@ async function buildAgent(chainIdOverride?: number) {
       SOL: 'solana',
       BNB: 'binancecoin',
       AVAX: 'avalanche-2',
+      CELO: 'celo',
       DOGE: 'dogecoin',
       MATIC: 'matic-network',
       ARB: 'arbitrum',
@@ -802,6 +913,7 @@ async function buildAgent(chainIdOverride?: number) {
       BINANCE: 'BNB',
       BINANCECOIN: 'BNB',
       AVALANCHE: 'AVAX',
+      CELO: 'CELO',
       DOGECOIN: 'DOGE',
       POLYGON: 'MATIC',
       ARBITRUM: 'ARB',
@@ -828,15 +940,16 @@ async function buildAgent(chainIdOverride?: number) {
           return await getTokenPrice(mappedFromName)
         }
         const token = resolveTokenBySymbol(sym, chain.id)
-        // AVAX price (with 24h change)
-        if (token && token.address === 'AVAX') {
-          const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd&include_24hr_change=true')
-          if (!res.ok) throw new Error(`Failed to fetch AVAX price: ${res.status}`)
+        // Native token prices (AVAX or CELO)
+        if (token && (token.address === 'AVAX' || token.address === 'CELO')) {
+          const coingeckoId = token.address === 'AVAX' ? 'avalanche-2' : 'celo'
+          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=usd&include_24hr_change=true`)
+          if (!res.ok) throw new Error(`Failed to fetch ${token.address} price: ${res.status}`)
           const data = await res.json()
-          return { symbol: 'AVAX', price: data['avalanche-2'].usd, change24h: data['avalanche-2'].usd_24h_change }
+          return { symbol: token.address, price: data[coingeckoId].usd, change24h: data[coingeckoId].usd_24h_change }
         }
         // ETH branch removed for current Fuji-only scope; reintroduce when multi-chain support returns.
-        // Known Avalanche token with coingeckoId
+        // Known token with coingeckoId
         if (token && token.coingeckoId) {
           const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${token.coingeckoId}&vs_currencies=usd&include_24hr_change=true`)
           if (!res.ok) throw new Error(`Failed to fetch ${sym} price: ${res.status}`)
@@ -921,13 +1034,15 @@ async function buildAgent(chainIdOverride?: number) {
   const address = targetAddress || await getAddress()
   const nativeBalance = await getBalance(undefined, address)
         
-    // Get supported token balances
-  const supportedTokens = ['USDC', 'WAVAX']
+    // Get supported token balances based on chain
+  const supportedTokens = chain.id === 11142220 
+    ? ['cUSD', 'cEUR', 'USDC'] // Celo tokens
+    : ['USDC', 'WAVAX'] // Avalanche tokens
         const tokenBalances = await Promise.all(
           supportedTokens.map(async (symbol) => {
             try {
       const token = resolveTokenBySymbol(symbol, chain.id)
-      const nativeSentinel = 'AVAX'
+      const nativeSentinel = chain.id === 11142220 ? 'CELO' : 'AVAX'
       if (token && token.address !== nativeSentinel) {
                 const balance = await getBalance(token.address as Address, address)
                 const price = await getTokenPrice(symbol)
@@ -945,7 +1060,7 @@ async function buildAgent(chainIdOverride?: number) {
           })
         )
 
-    const nativeSym = 'AVAX'
+    const nativeSym = chain.id === 11142220 ? 'CELO' : 'AVAX'
     const nativePrice = await getTokenPrice(nativeSym)
     const totalValue = parseFloat(nativeBalance) * nativePrice.price + 
           tokenBalances.filter(Boolean).reduce((sum, token) => sum + (token?.valueUSD || 0), 0)

@@ -1,10 +1,10 @@
 import type { Address } from 'viem'
 
-// Token registry supporting both Avalanche mainnet and Fuji testnet
+// Token registry supporting Avalanche (mainnet/testnet) and Celo
 
 export type TokenInfo = {
   symbol: string
-  address: Address | 'AVAX'
+  address: Address | 'AVAX' | 'CELO'
   decimals: number
   coingeckoId?: string
 }
@@ -32,6 +32,16 @@ const FUJI_TOKENS: Record<string, TokenInfo> = {
   'USDT.E':  { symbol: 'USDT.e', address: '0xA27f39E9C21b3376e1DA169e90e2DbA0C2e88d7b', decimals: 6, coingeckoId: 'tether' }
 }
 
+// Celo mainnet tokens (Chain ID 11142220)
+const CELO_TOKENS: Record<string, TokenInfo> = {
+  CELO: { symbol: 'CELO', address: 'CELO', decimals: 18, coingeckoId: 'celo' },
+  CUSD: { symbol: 'cUSD', address: '0x765DE816845861e75A25fCA122bb6898B8B1282a', decimals: 18, coingeckoId: 'celo-dollar' },
+  CEUR: { symbol: 'cEUR', address: '0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73', decimals: 18, coingeckoId: 'celo-euro' },
+  CREAL: { symbol: 'cREAL', address: '0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787', decimals: 18, coingeckoId: 'celo-brazilian-real' },
+  USDC: { symbol: 'USDC', address: '0xcebA9300f2b948710d2653dD7B07f33A8B32118C', decimals: 6, coingeckoId: 'usd-coin' },
+  USDT: { symbol: 'USDT', address: '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e', decimals: 6, coingeckoId: 'tether' },
+}
+
 // Dynamic custom/test tokens from env (for custom deployed tokens)
 function getCustomEnvTokens(): Record<string, TokenInfo> {
   const out: Record<string, TokenInfo> = {}
@@ -49,11 +59,18 @@ function getCustomEnvTokens(): Record<string, TokenInfo> {
 
 // Get the appropriate token registry based on chain ID
 function getTokenRegistry(chainId?: number): Record<string, TokenInfo> {
-  const isMainnet = chainId === 43114 || (!chainId && process.env.CHAIN_ID === '43114')
+  const id = chainId ?? Number(process.env.CHAIN_ID || 43113)
   
-  if (isMainnet) {
+  if (id === 43114) {
+    // Avalanche mainnet
     return {
       ...MAINNET_TOKENS,
+      ...getCustomEnvTokens()
+    }
+  } else if (id === 11142220) {
+    // Celo mainnet
+    return {
+      ...CELO_TOKENS,
       ...getCustomEnvTokens()
     }
   } else {
