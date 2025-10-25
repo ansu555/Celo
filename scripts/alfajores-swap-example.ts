@@ -4,22 +4,26 @@ import { DEXAggregator } from '@/lib/routing/aggregator'
 import { resolveTokenBySymbol } from '@/lib/tokens'
 
 async function main() {
-  // Provide sane defaults if env vars are not set
+  // Celo Sepolia defaults (update these when you have DEX on Sepolia)
   if (!process.env.NEXT_PUBLIC_AMM_FACTORY) {
-    process.env.NEXT_PUBLIC_AMM_FACTORY = '0x62d5b84bE28a183aBB507E125B384122D2C25fAE'
+    process.env.NEXT_PUBLIC_AMM_FACTORY = '0x0000000000000000000000000000000000000000'
   }
   if (!process.env.NEXT_PUBLIC_AMM_ROUTER) {
-    process.env.NEXT_PUBLIC_AMM_ROUTER = '0xE3D8bd6Aed4F159bc8000a9cD47CffDb95F96121'
+    process.env.NEXT_PUBLIC_AMM_ROUTER = '0x0000000000000000000000000000000000000000'
   }
   if (!process.env.CHAIN_ID && !process.env.NEXT_PUBLIC_CHAIN_ID) {
-    process.env.NEXT_PUBLIC_CHAIN_ID = '44787'
+    process.env.NEXT_PUBLIC_CHAIN_ID = '11142220'
+  }
+  if (!process.env.RPC_URL && !process.env.NEXT_PUBLIC_RPC_URL) {
+    process.env.NEXT_PUBLIC_RPC_URL = 'https://forno.celo-sepolia.celo-testnet.org'
   }
 
   const amountIn = '10'
   const tokenInSymbol = 'cUSD'
   const tokenOutSymbol = 'cEUR'
 
-  console.log('Fetching live Ubeswap pools from Alfajores...')
+  console.log('Fetching live pools from Celo Sepolia...')
+  console.log('Note: Update NEXT_PUBLIC_AMM_FACTORY/ROUTER if you have a DEX deployed on Sepolia')
   const pools = await refreshRuntimePools({ maxPairs: 200 })
   console.log(`Loaded ${pools.length} pools`)
 

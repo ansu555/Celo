@@ -25,7 +25,7 @@ function toUnits(amount: string, decimals: number): bigint {
   return BigInt(int + fracPadded)
 }
 
-const DEFAULT_POOL_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
+const DEFAULT_POOL_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 11142220)
 
 const defaultPools: Pool[] = (() => {
   const chainId = DEFAULT_POOL_CHAIN_ID

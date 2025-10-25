@@ -12,7 +12,7 @@ const factoryAbi = FactoryAbi as any
 const pairAbi = PairAbi as any
 
 const targetChain = getViemChainFromEnv()
-const fallbackRpc = 'https://alfajores-forno.celo-testnet.org'
+const fallbackRpc = 'https://forno.celo-sepolia.celo-testnet.org'
 const rpcUrl = process.env.RPC_URL_CELO || process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || fallbackRpc
 
 const publicClient = createPublicClient({

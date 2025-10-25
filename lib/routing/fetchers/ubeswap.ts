@@ -118,7 +118,7 @@ async function fetchPairAsPool(
 
 export async function fetchUbeswapPools(options: FetchUbeswapPoolsOptions = {}): Promise<Pool[]> {
   const chain = getViemChainFromEnv()
-  const defaultRpc = 'https://alfajores-forno.celo-testnet.org'
+  const defaultRpc = 'https://forno.celo-sepolia.celo-testnet.org'
   const rpcUrl = options.rpcUrl || process.env.RPC_URL_CELO || process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || defaultRpc
   const factoryAddress = options.factoryAddress || (process.env.NEXT_PUBLIC_AMM_FACTORY as Address)
 

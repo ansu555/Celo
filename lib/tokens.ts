@@ -45,6 +45,23 @@ const DEFAULT_ALFAJORES_TOKENS: Record<string, TokenInfo> = {
   }
 }
 
+// Celo Sepolia tokens (default testnet)
+const DEFAULT_SEPOLIA_TOKENS: Record<string, TokenInfo> = {
+  CELO: CELO_NATIVE,
+  CUSD: {
+    symbol: 'cUSD',
+    address: (process.env.CELO_CUSD_ADDRESS_SEPOLIA || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-dollar'
+  },
+  CEUR: {
+    symbol: 'cEUR',
+    address: (process.env.CELO_CEUR_ADDRESS_SEPOLIA || '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-euro'
+  }
+}
+
 function getEnvTokens(prefix: string): Record<string, TokenInfo> {
   const out: Record<string, TokenInfo> = {}
   for (let i = 1; i <= 5; i++) {
@@ -64,14 +81,14 @@ function getEnvTokens(prefix: string): Record<string, TokenInfo> {
   return out
 }
 
-const DEFAULT_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 44787)
+const DEFAULT_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 11142220)
 
 function getTokenRegistry(chainId?: number): Record<string, TokenInfo> {
   const target = chainId ?? Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID)
-  const isMainnet = target === 42220
   const runtimeEntries = runtimeTokenRegistry.get(target) ?? {}
 
-  if (isMainnet) {
+  if (target === 42220) {
+    // Celo Mainnet
     return {
       ...DEFAULT_MAINNET_TOKENS,
       ...getEnvTokens('CELO_MAINNET'),
@@ -79,11 +96,12 @@ function getTokenRegistry(chainId?: number): Record<string, TokenInfo> {
     }
   }
 
+  // Default to Sepolia for all testnets
   return {
-    ...DEFAULT_ALFAJORES_TOKENS,
+    ...DEFAULT_SEPOLIA_TOKENS,
     // Allow overriding/adding tokens for testnets via env
-    ...getEnvTokens('CELO_ALFAJORES'),
     ...getEnvTokens('CELO_SEPOLIA'),
+    ...getEnvTokens('CELO_ALFAJORES'),
     ...getEnvTokens('CELO_CUSTOM'),
     ...runtimeEntries
   }
