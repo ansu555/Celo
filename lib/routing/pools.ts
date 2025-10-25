@@ -6,6 +6,7 @@
 // All fees expressed in basis points (e.g., 30 = 0.30%).
 
 import { resolveTokenBySymbol, type TokenInfo } from '../tokens'
+import { fetchUbeswapPools, type FetchUbeswapPoolsOptions } from './fetchers/ubeswap'
 
 export interface Pool {
   id: string
@@ -26,7 +27,7 @@ function toUnits(amount: string, decimals: number): bigint {
 
 const DEFAULT_POOL_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
 
-const pools: Pool[] = (() => {
+const defaultPools: Pool[] = (() => {
   const chainId = DEFAULT_POOL_CHAIN_ID
   const CELO = resolveTokenBySymbol('CELO', chainId)
   const CUSD = resolveTokenBySymbol('cUSD', chainId) || resolveTokenBySymbol('CUSD', chainId)
@@ -61,10 +62,19 @@ const pools: Pool[] = (() => {
   ]
 })()
 
-export function listPools(): Pool[] { return pools }
+let runtimePools: Pool[] | null = null
+
+function activePools(): Pool[] {
+  if (runtimePools && runtimePools.length) {
+    return runtimePools
+  }
+  return defaultPools
+}
+
+export function listPools(): Pool[] { return activePools() }
 
 export function getPoolById(id: string): Pool | null {
-  return pools.find(p => p.id === id) || null
+  return activePools().find(p => p.id === id) || null
 }
 
 export interface QuoteResult {
@@ -75,7 +85,7 @@ export interface QuoteResult {
 
 // Compute output for single-hop constant product pool
 export function quoteSingleHop(tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn: bigint): QuoteResult | null {
-  const pool = pools.find(p => (p.token0.address === tokenIn.address && p.token1.address === tokenOut.address) || (p.token1.address === tokenIn.address && p.token0.address === tokenOut.address))
+  const pool = activePools().find(p => (p.token0.address === tokenIn.address && p.token1.address === tokenOut.address) || (p.token1.address === tokenIn.address && p.token0.address === tokenOut.address))
   if (!pool) return null
   const zeroForOne = pool.token0.address === tokenIn.address
   const reserveIn = zeroForOne ? pool.reserve0 : pool.reserve1
@@ -108,4 +118,14 @@ export function quoteBest(tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn: big
   // 2. (Placeholder) Could attempt two-hop via CELO or cUSD as common bases
   // Return best by amountOut
   return direct // for now
+}
+
+export function setRuntimePools(pools: Pool[] | null): void {
+  runtimePools = pools && pools.length ? pools : null
+}
+
+export async function refreshRuntimePools(options: FetchUbeswapPoolsOptions = {}): Promise<Pool[]> {
+  const pools = await fetchUbeswapPools(options)
+  setRuntimePools(pools)
+  return pools
 }
