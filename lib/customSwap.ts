@@ -7,7 +7,7 @@ import { findBestRouteQuote, discoverRoutes, quoteRoute, type Route, type RouteQ
 import { CustomSwapError, wrapUnknown, interpretExecutionError } from './errors'
 import { logSwapEvent } from './log'
 
-const DEFAULT_CELO_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 44787)
+const DEFAULT_CELO_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 11142220)
 
 function requireErc20Address(token: NonNullable<ReturnType<typeof resolveTokenBySymbol>>, context: string): Address {
   if (token.address === 'CELO') {

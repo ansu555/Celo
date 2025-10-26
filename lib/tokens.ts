@@ -218,6 +218,29 @@ export function resolveTokenBySymbol(
   return registry[key] ?? null;
 }
 
+export function resolveTokenByAddress(address?: Address | string, chainId?: number): TokenInfo | null {
+  if (!address || address === 'CELO') return null
+  const target = chainId ?? Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID)
+  const registry = getTokenRegistry(target)
+  const normalized = (address as string).toLowerCase()
+
+  for (const token of Object.values(registry)) {
+    if (token.address === 'CELO') continue
+    if ((token.address as string).toLowerCase() === normalized) {
+      return token
+    }
+  }
+
+  return null
+}
+
+export function registerRuntimeToken(token: TokenInfo, chainId?: number): void {
+  const target = chainId ?? Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID)
+  const next = { ...(runtimeTokenRegistry.get(target) ?? {}) }
+  next[token.symbol.toUpperCase()] = token
+  runtimeTokenRegistry.set(target, next)
+}
+
 export function resolveTokenByCoinrankingId(): TokenInfo | null {
   return null;
 }

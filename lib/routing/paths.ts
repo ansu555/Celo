@@ -110,7 +110,7 @@ export function findBestRouteQuote(tokenIn: TokenInfo, tokenOut: TokenInfo, amou
 }
 
 // Convenience: resolve symbols then call findBestRouteQuote.
-const DEFAULT_ROUTE_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 44787)
+const DEFAULT_ROUTE_CHAIN_ID = Number(process.env.ROUTING_CHAIN_ID || process.env.CHAIN_ID || 11142220)
 
 export function findBestRouteQuoteBySymbol(tokenInSymbol: string, tokenOutSymbol: string, amountIn: bigint, maxHops: number, chainId = DEFAULT_ROUTE_CHAIN_ID): RouteQuote | null {
   const tIn = resolveTokenBySymbol(tokenInSymbol, chainId)
