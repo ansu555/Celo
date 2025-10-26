@@ -119,19 +119,20 @@ export function Header() {
   return (
   // Make header transparent so background shader is visible behind it
   <header className="sticky top-0 z-50 w-full bg-transparent text-white backdrop-blur-lg">
-  <div className="container relative flex h-16 items-center justify-between px-4 md:px-8">
-        {/* Logo */}
-  <Link href="/" className="absolute left-8 top-1/2 transform -translate-y-1/2 z-10 flex items-center font-extrabold text-lg md:text-xl tracking-tight">
-        <img 
-          src="/10xswap_logo.png" 
-          alt="Accorto Logo" 
-          className="h-8 w-8 mr-2"
-        />
-        <span className="text-white">Accorto</span>
-      </Link>
+  <div className="container h-16 px-4 md:px-8">
+      <div className="hidden md:grid md:grid-cols-3 h-full items-center gap-4">
+        {/* Logo - Left */}
+        <Link href="/" className="flex items-center font-extrabold text-lg md:text-xl tracking-tight">
+          <img 
+            src="/10xswap_logo.png" 
+            alt="Accorto Logo" 
+            className="h-8 w-8 mr-2"
+          />
+          <span className="text-white">Accorto</span>
+        </Link>
 
-        {/* Desktop navigation - Centered */}
-  <nav className="hidden md:flex gap-6 items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+        {/* Desktop navigation - Center */}
+        <nav className="flex gap-1 lg:gap-4 xl:gap-6 items-center justify-center">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -140,8 +141,8 @@ export function Header() {
                 href={item.href}
                 className={cn(
                   // base
-                  "text-sm font-medium transition-colors inline-flex items-center justify-center",
-                  "px-4 py-2 rounded-full",
+                  "text-xs lg:text-sm font-medium transition-colors inline-flex items-center justify-center",
+                  "px-2 lg:px-3 xl:px-4 py-2 rounded-full whitespace-nowrap",
                   // visual
                   isActive
                     ? "bg-white/25 text-white backdrop-blur-lg shadow-sm"
@@ -154,17 +155,17 @@ export function Header() {
           })}
         </nav>
 
-    {/* Desktop wallet connect and mode toggle (aligned to right corner) */}
-  <div className="hidden md:flex items-center gap-3 text-white absolute right-8 top-1/2 transform -translate-y-1/2">
-                <RuleBuilderModal
+        {/* Desktop wallet connect and mode toggle - Right */}
+        <div className="flex items-center justify-end gap-1 lg:gap-2 xl:gap-3 text-white">
+          <RuleBuilderModal
             trigger={
               <Button
                 variant="ghost"
                 size="default"
-                className="px-6 py-2 rounded-[40px] bg-white/8 text-white border border-white/10 backdrop-blur-lg hover:bg-white/12 shadow-[0_6px_18px_rgba(0,0,0,0.25)] flex items-center gap-3"
+                className="px-2 lg:px-4 xl:px-6 py-2 rounded-[40px] bg-white/8 text-white border border-white/10 backdrop-blur-lg hover:bg-white/12 shadow-[0_6px_18px_rgba(0,0,0,0.25)] flex items-center gap-1 lg:gap-2 whitespace-nowrap text-xs lg:text-sm"
               >
                 {/* optional left icon could go here */}
-                <span className="font-medium">Auto-Pilot Portfolio</span>
+                <span className="font-medium">Auto-Pilot</span>
               </Button>
             }
             availableCoins={[
@@ -180,29 +181,43 @@ export function Header() {
               toast({ title: "Rule saved", description: describeRule(rule) })
             }}
           />
-              <ConnectKitButton.Custom>
+          <ConnectKitButton.Custom>
             {({ isConnected, show, truncatedAddress }) => (
-              <Button onClick={show} variant="ghost" size="default" className="px-4 py-2 rounded-[32px] bg-white/6 text-white border border-white/10 backdrop-blur-lg hover:bg-white/12 shadow-sm">
-                <span className="font-medium text-sm">{isConnected ? truncatedAddress : "0xA339••••1366"}</span>
+              <Button onClick={show} variant="ghost" size="default" className="px-2 lg:px-3 xl:px-4 py-2 rounded-[32px] bg-white/6 text-white border border-white/10 backdrop-blur-lg hover:bg-white/12 shadow-sm whitespace-nowrap text-xs lg:text-sm">
+                <span className="font-medium">{isConnected ? truncatedAddress : "0xA339••••1366"}</span>
               </Button>
             )}
           </ConnectKitButton.Custom>
-          <div className="ml-2">
+          <div className="shrink-0">
             <ModeToggle />
           </div>
         </div>
+      </div>
+
+      {/* Mobile layout */}
+      <div className="md:hidden flex h-full items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center font-extrabold text-lg tracking-tight">
+          <img 
+            src="/10xswap_logo.png" 
+            alt="Accorto Logo" 
+            className="h-8 w-8 mr-2"
+          />
+          <span className="text-white">Accorto</span>
+        </Link>
 
         {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="shrink-0"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle mobile menu"
         >
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
+    </div>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (

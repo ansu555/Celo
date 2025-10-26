@@ -154,20 +154,57 @@ export default function CoinOverviewPane({ coinId }: { coinId?: string }) {
             <CardContent>
               <ChartContainer
                 config={{ price: { label: "Price", color: "#FF5CA8" } }}
-                className="h-[360px]"
+                className="h-[420px]"
               >
-                <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 15, right: 30, left: 10, bottom: 10 }}>
                   <defs>
                     <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-price)" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="var(--color-price)" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--color-price)" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="var(--color-price)" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tickFormatter={fmtDate} minTickGap={30} />
-                  <YAxis tickFormatter={(v) => `$${v.toLocaleString()}`} width={70} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area type="monotone" dataKey="price" stroke="var(--color-price)" fillOpacity={1} fill="url(#priceFill)" />
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    vertical={false} 
+                    stroke="hsl(var(--border))" 
+                    opacity={0.3}
+                  />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={fmtDate} 
+                    minTickGap={50} 
+                    tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                    tickLine={{ stroke: 'hsl(var(--border))' }}
+                  />
+                  <YAxis 
+                    tickFormatter={(v) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} 
+                    width={85}
+                    tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                    tickLine={{ stroke: 'hsl(var(--border))' }}
+                  />
+                  <ChartTooltip 
+                    content={<ChartTooltipContent 
+                      labelFormatter={(value: number) => new Date(value * 1000).toLocaleDateString(undefined, { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                      formatter={(value: number) => [`$${Number(value).toLocaleString(undefined, { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })}`, 'Price']}
+                    />} 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="price" 
+                    stroke="var(--color-price)" 
+                    strokeWidth={2.5}
+                    fillOpacity={1} 
+                    fill="url(#priceFill)" 
+                  />
                 </AreaChart>
               </ChartContainer>
             </CardContent>
