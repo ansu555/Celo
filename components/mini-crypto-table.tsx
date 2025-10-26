@@ -170,7 +170,7 @@ export function MiniCryptoTable({
         ) : isFetching ? (
           <MiniTableSkeleton />
         ) : (
-          <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
     <Table>
               <TableHeader>
                 <TableRow>
@@ -181,17 +181,17 @@ export function MiniCryptoTable({
       <TableHead className="text-center"><Shield className="inline h-3 w-3 mr-1" />Risk</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {slice.map((c) => (
-      <TableRow
-                    key={c.id}
-                    onClick={() => onSelect(c.id)}
-        className={cn("cursor-pointer hover:bg-muted/50 dark:hover:bg-[#F3C623]/10", selectedId === c.id && "bg-muted/70 dark:bg-[#F3C623]/10")}
-                  >
+                      <TableBody>
+                        {slice.map((c) => (
+                          <TableRow
+                            key={c.id}
+                            onClick={() => onSelect(c.id)}
+                            className={cn("cursor-pointer hover:bg-muted/50 dark:hover:bg-[#FF5CA8]/10", selectedId === c.id && "bg-muted/70 dark:bg-[#FF5CA8]/10")}
+                          >
         <TableCell className="font-medium py-2">{c.rank}</TableCell>
         <TableCell className="py-2">
                       <div className="flex items-center">
-                        <div className="w-7 h-7 bg-[red-600]/10 dark:bg-[#F3C623]/10 rounded-full mr-2 flex items-center justify-center text-[10px] font-mono text-[red-600] dark:text-[#F3C623]">
+                        <div className="w-7 h-7 bg-[red-600]/10 dark:bg-[#FF5CA8]/10 rounded-full mr-2 flex items-center justify-center text-[10px] font-mono text-[red-600] dark:text-[#FF5CA8]">
                           {c.symbol.substring(0, 3)}
                         </div>
                         <div>
@@ -200,10 +200,10 @@ export function MiniCryptoTable({
                         </div>
                       </div>
                     </TableCell>
-        <TableCell className={cn("text-right py-2", c.change1h >= 0 ? "text-green-500 dark:text-[#F3C623]" : "text-red-500")}> 
+        <TableCell className={cn("text-right py-2", c.change1h >= 0 ? "text-green-500 dark:text-[#FF5CA8]" : "text-red-500")}>
                       <div className="flex items-center justify-end">{c.change1h >= 0 ? <ArrowUp className="mr-1 h-3 w-3" /> : <ArrowDown className="mr-1 h-3 w-3" />}{Math.abs(c.change1h).toFixed(2)}%</div>
                     </TableCell>
-        <TableCell className={cn("text-right py-2", c.change24h >= 0 ? "text-green-500 dark:text-[#F3C623]" : "text-red-500")}> 
+        <TableCell className={cn("text-right py-2", c.change24h >= 0 ? "text-green-500 dark:text-[#FF5CA8]" : "text-red-500")}>
                       <div className="flex items-center justify-end">{c.change24h >= 0 ? <ArrowUp className="mr-1 h-3 w-3" /> : <ArrowDown className="mr-1 h-3 w-3" />}{Math.abs(c.change24h).toFixed(2)}%</div>
                     </TableCell>
         <TableCell className="text-center py-2"><RiskBadge risk={c.riskLevel} /></TableCell>

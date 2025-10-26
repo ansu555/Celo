@@ -208,8 +208,8 @@ export function Header() {
                   className={cn(
                     "text-sm font-medium transition-colors py-2 px-2 rounded-md",
                     pathname === item.href
-                      ? "text-primary dark:text-[#F3C623] bg-primary/10 dark:bg-[#F3C623]/10"
-                      : "text-gray-700 hover:text-primary hover:bg-primary/5 dark:text-[#F3C623]/60 dark:hover:text-[#F3C623] dark:hover:bg-[#F3C623]/5"
+                      ? "text-primary dark:text-[#FF5CA8] bg-primary/10 dark:bg-[#FF5CA8]/10"
+                      : "text-gray-700 hover:text-primary hover:bg-primary/5 dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] dark:hover:bg-[#FF5CA8]/5"
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -223,12 +223,12 @@ export function Header() {
                   <Button 
                     variant="outline" 
                     size="default" 
-                    className="w-full group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#F3C623]/25"
+                    className="w-full group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#FF5CA8]/25"
                   >
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white dark:group-hover:text-black">
                       Auto-Pilot Portfolio
                     </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#F3C623] dark:to-[#F3C623]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#FF5CA8] dark:to-[#FF5CA8]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
                   </Button>
                 }
                 onPreview={(rule) => {

@@ -6,18 +6,18 @@ import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "bg-red-600 text-white hover:bg-red-700 dark:bg-[#F3C623] dark:text-black dark:hover:bg-[#F3C623]/90",
+      {
+        variants: {
+          variant: {
+            default: "bg-red-600 text-white hover:bg-red-700 dark:bg-[#FF5CA8] dark:text-black dark:hover:bg-[#FF5CA8]/90",
         destructive:
           "bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:text-white dark:hover:bg-red-800",
         outline:
-          "border border-red-600/40 bg-white text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-[#F3C623]/20 dark:bg-transparent dark:text-[#F3C623] dark:hover:border-[#F3C623]/40 dark:hover:bg-[#F3C623]/10 dark:hover:text-[#F3C623]",
+          "border border-red-600/40 bg-white text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-[#FF5CA8]/20 dark:bg-transparent dark:text-[#FF5CA8] dark:hover:border-[#FF5CA8]/40 dark:hover:bg-[#FF5CA8]/10 dark:hover:text-[#FF5CA8]",
         secondary:
-          "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-[#F3C623]/20 dark:text-[#F3C623] dark:hover:bg-[#F3C623]/30",
-        ghost: "text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-[#F3C623] dark:hover:bg-[#F3C623]/10 dark:hover:text-[#F3C623]",
-        link: "text-red-600 underline-offset-4 hover:underline dark:text-[#F3C623] dark:hover:text-[#F3C623]/80",
+          "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-[#FF5CA8]/20 dark:text-[#FF5CA8] dark:hover:bg-[#FF5CA8]/30",
+        ghost: "text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-[#FF5CA8] dark:hover:bg-[#FF5CA8]/10 dark:hover:text-[#FF5CA8]",
+        link: "text-red-600 underline-offset-4 hover:underline dark:text-[#FF5CA8] dark:hover:text-[#FF5CA8]/80",
       },
       size: {
         default: "h-10 px-4 py-2",

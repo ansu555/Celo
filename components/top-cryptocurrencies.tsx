@@ -146,7 +146,7 @@ export function TopCryptocurrencies() {
       </div>
 
       {error ? (
-        <div className="text-center p-6 text-red-500 dark:text-[#F3C623]">
+  <div className="text-center p-6 text-red-500 dark:text-[#FF5CA8]">
           Error loading cryptocurrency data. Please try again later.
         </div>
       ) : isLoading ? (
@@ -162,7 +162,7 @@ export function TopCryptocurrencies() {
       )}
 
       <div className="mt-6 text-center">
-        <Button asChild variant="outline" className="hover:border-[red-600]/50 hover:text-[red-600] dark:hover:border-[#F3C623]/30 dark:hover:text-[#F3C623]">
+  <Button asChild variant="outline" className="hover:border-[red-600]/50 hover:text-[red-600] dark:hover:border-[#FF5CA8]/30 dark:hover:text-[#FF5CA8]">
           <Link href="/cryptocurrencies">
             View All Cryptocurrencies
             <ChevronRight className="ml-2 h-4 w-4" />
@@ -279,16 +279,16 @@ function LoadingSkeleton({ view }: { view: "table" | "cards" }) {
 
 function CryptoTable({ cryptos }: { cryptos: Cryptocurrency[] }) {
   return (
-    <div className="rounded-md border border-gray-200/20 bg-gradient-to-br from-white to-[red-600]/5 dark:from-neutral-900 dark:to-[#F3C623]/5 dark:border-[#F3C623]/10 hover:shadow-[red-600]/10 dark:hover:shadow-[#F3C623]/20 overflow-hidden">
+  <div className="rounded-md border border-gray-200/20 bg-gradient-to-br from-white to-[red-600]/5 dark:from-neutral-900 dark:to-[#FF5CA8]/5 dark:border-[#FF5CA8]/10 hover:shadow-[red-600]/10 dark:hover:shadow-[#FF5CA8]/20 overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-[red-600]/10 dark:bg-[#F3C623]/10">
+          <TableHeader className="bg-[red-600]/10 dark:bg-[#FF5CA8]/10">
             <TableRow>
-              <TableHead className="w-[60px] text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm">Rank</TableHead>
-              <TableHead className="text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm min-w-[120px]">Name</TableHead>
-              <TableHead className="text-right text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm min-w-[80px]">Price</TableHead>
+              <TableHead className="w-[60px] text-[red-600]/80 dark:text-[#FF5CA8]/80 text-xs sm:text-sm">Rank</TableHead>
+              <TableHead className="text-[red-600]/80 dark:text-[#FF5CA8]/80 text-xs sm:text-sm min-w-[120px]">Name</TableHead>
+              <TableHead className="text-right text-[red-600]/80 dark:text-[#FF5CA8]/80 text-xs sm:text-sm min-w-[80px]">Price</TableHead>
               <TableHead className="text-right text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm min-w-[70px]">24h %</TableHead>
-              <TableHead className="text-right hidden lg:table-cell text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm">Market Cap</TableHead>
+              <TableHead className="text-right hidden lg:table-cell text-[red-600]/80 dark:text-[#FF5CA8]/80 text-xs sm:text-sm">Market Cap</TableHead>
               <TableHead className="text-right hidden xl:table-cell text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm">Volume (24h)</TableHead>
               <TableHead className="text-center text-[red-600]/80 dark:text-[#F3C623]/80 text-xs sm:text-sm hidden sm:table-cell">
                 <Shield className="inline mr-1 h-3 w-3" />
@@ -296,16 +296,16 @@ function CryptoTable({ cryptos }: { cryptos: Cryptocurrency[] }) {
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="bg-[red-600]/[0.02] dark:bg-[#F3C623]/[0.01]">
+        <TableBody className="bg-[red-600]/[0.02] dark:bg-[#FF5CA8]/[0.01]">
             {cryptos.map((crypto) => (
-              <TableRow key={crypto.id} className="hover:bg-[red-600]/5 dark:hover:bg-[#F3C623]/5 border-b border-[red-600]/5 dark:border-[#F3C623]/5 last:border-0">
+              <TableRow key={crypto.id} className="hover:bg-[red-600]/5 dark:hover:bg-[#FF5CA8]/5 border-b border-[red-600]/5 dark:border-[#FF5CA8]/5 last:border-0">
                 <TableCell className="font-medium text-xs sm:text-sm">{crypto.rank}</TableCell>
                 <TableCell className="min-w-[120px]">
                   <Link
                     href={`/cryptocurrencies/${crypto.id}`}
-                    className="flex items-center hover:text-[red-600] dark:hover:text-[#F3C623] transition-colors"
+                    className="flex items-center hover:text-[red-600] dark:hover:text-[#FF5CA8] transition-colors"
                   >
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[red-600]/10 dark:bg-[#F3C623]/10 rounded-full mr-2 sm:mr-3 flex items-center justify-center text-xs font-mono text-[red-600] dark:text-[#F3C623]">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[red-600]/10 dark:bg-[#FF5CA8]/10 rounded-full mr-2 sm:mr-3 flex items-center justify-center text-xs font-mono text-[red-600] dark:text-[#FF5CA8]">
                       {crypto.symbol.substring(0, 2)}
                     </div>
                     <div>
