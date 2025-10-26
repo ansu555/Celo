@@ -114,8 +114,8 @@ export function Header() {
   }
 
   return (
-    // Make header transparent so background shader is visible behind it
-    <header className="sticky top-0 z-50 w-full bg-transparent text-white backdrop-blur-md">
+  // Make header transparent so background shader is visible behind it
+  <header className="sticky top-0 z-50 w-full bg-transparent text-white backdrop-blur-lg">
   <div className="container relative flex h-16 items-center justify-between px-4 md:px-8">
         {/* Logo */}
   <Link href="/" className="absolute left-8 top-1/2 transform -translate-y-1/2 z-10 flex items-center font-extrabold text-lg md:text-xl tracking-tight">
@@ -141,7 +141,7 @@ export function Header() {
                   "px-4 py-2 rounded-full",
                   // visual
                   isActive
-                    ? "bg-white/25 text-white backdrop-blur-md shadow-sm"
+                    ? "bg-white/25 text-white backdrop-blur-lg shadow-sm"
                     : "text-white/70 hover:bg-white/5 hover:text-white"
                 )}
               >
@@ -153,12 +153,12 @@ export function Header() {
 
     {/* Desktop wallet connect and mode toggle (aligned to right corner) */}
   <div className="hidden md:flex items-center gap-3 text-white absolute right-8 top-1/2 transform -translate-y-1/2">
-          <RuleBuilderModal
+                <RuleBuilderModal
             trigger={
               <Button
                 variant="ghost"
                 size="default"
-                className="px-6 py-2 rounded-[40px] bg-white/8 text-white border border-white/10 backdrop-blur-md hover:bg-white/12 shadow-[0_6px_18px_rgba(0,0,0,0.25)] flex items-center gap-3"
+                className="px-6 py-2 rounded-[40px] bg-white/8 text-white border border-white/10 backdrop-blur-lg hover:bg-white/12 shadow-[0_6px_18px_rgba(0,0,0,0.25)] flex items-center gap-3"
               >
                 {/* optional left icon could go here */}
                 <span className="font-medium">Auto-Pilot Portfolio</span>
@@ -172,9 +172,9 @@ export function Header() {
               toast({ title: "Rule saved", description: describeRule(rule) })
             }}
           />
-          <ConnectKitButton.Custom>
+              <ConnectKitButton.Custom>
             {({ isConnected, show, truncatedAddress }) => (
-              <Button onClick={show} variant="ghost" size="default" className="px-4 py-2 rounded-[32px] bg-white/6 text-white border border-white/10 backdrop-blur-md hover:bg-white/12 shadow-sm">
+              <Button onClick={show} variant="ghost" size="default" className="px-4 py-2 rounded-[32px] bg-white/6 text-white border border-white/10 backdrop-blur-lg hover:bg-white/12 shadow-sm">
                 <span className="font-medium text-sm">{isConnected ? truncatedAddress : "0xA339••••1366"}</span>
               </Button>
             )}
@@ -208,8 +208,8 @@ export function Header() {
                   className={cn(
                     "text-sm font-medium transition-colors py-2 px-2 rounded-md",
                     pathname === item.href
-                      ? "text-primary dark:text-[#FF5CA8] bg-primary/10 dark:bg-[#FF5CA8]/10"
-                      : "text-gray-700 hover:text-primary hover:bg-primary/5 dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] dark:hover:bg-[#FF5CA8]/5"
+                      ? "text-primary dark:text-[#A3B18A] bg-primary/10 dark:bg-[#A3B18A]/10"
+                      : "text-gray-700 hover:text-primary hover:bg-primary/5 dark:text-[#A3B18A]/60 dark:hover:text-[#A3B18A] dark:hover:bg-[#A3B18A]/5"
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -223,12 +223,12 @@ export function Header() {
                   <Button 
                     variant="outline" 
                     size="default" 
-                    className="w-full group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#FF5CA8]/25"
+                    className="w-full group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#A3B18A]/25"
                   >
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-white dark:group-hover:text-black">
                       Auto-Pilot Portfolio
                     </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#FF5CA8] dark:to-[#FF5CA8]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#A3B18A] dark:to-[#A3B18A]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
                   </Button>
                 }
                 onPreview={(rule) => {

@@ -6,7 +6,7 @@ export default function RouteDisplayDemo() {
     <div className="min-h-screen bg-gradient-to-br from-[red-50] to-[#F8FAFF] dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[red-600] dark:text-[#F3C623] mb-2">
+          <h1 className="text-4xl font-bold text-[red-600] dark:text-[#FF5CA8] mb-2">
             Route Display Demo
           </h1>
           <p className="text-gray-600 dark:text-gray-400">

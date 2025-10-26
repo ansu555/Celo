@@ -129,7 +129,7 @@ const RouteCard: React.FC<{
         <div className="mt-3 space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600 dark:text-gray-400">Output:</span>
-            <span className="font-semibold text-[red-600] dark:text-[#F3C623]">
+            <span className="font-semibold text-[red-600] dark:text-[#FF5CA8]">
               {Number(formattedAmountOut).toLocaleString(undefined, { 
                 maximumFractionDigits: 6 
               })} {tokenOut}
@@ -188,7 +188,7 @@ export const RouteDisplay: React.FC<RouteDisplayProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <div className="animate-spin w-4 h-4 border-2 border-[red-600] border-t-transparent rounded-full dark:border-[#F3C623]" />
+            <div className="animate-spin w-4 h-4 border-2 border-[red-600] border-t-transparent rounded-full dark:border-[#FF5CA8]" />
             Finding best routes...
           </CardTitle>
         </CardHeader>

@@ -200,6 +200,15 @@ void main() {
     col *= uTint;
     col *= uBrightness;
 
+    // Vignette to simulate CRT screen falloff
+    {
+      vec2 centered = uv - 0.5;
+      float vig = 1.0 - dot(centered, centered) * 1.6;
+      vig = clamp(vig, 0.0, 1.0);
+      // subtle darkening toward edges
+      col *= mix(0.78, 1.0, vig);
+    }
+
     if(uDither > 0.0){
       float rnd = hash21(gl_FragCoord.xy);
       col += (rnd - 0.5) * (uDither * 0.003922);
@@ -226,13 +235,13 @@ export default function FaultyTerminal({
   digitSize = 1.5,
   timeScale = 0.3,
   pause = false,
-  scanlineIntensity = 0.3,
+  scanlineIntensity = 0.45,
   glitchAmount = 1,
   flickerAmount = 1,
   noiseAmp = 1,
-  chromaticAberration = 0,
+  chromaticAberration = 0.003,
   dither = 0,
-  curvature = 0.2,
+  curvature = 0.32,
   tint = '#ffffff',
   mouseReact = true,
   mouseStrength = 0.2,
@@ -399,6 +408,6 @@ export default function FaultyTerminal({
   ]);
 
   return (
-    <div ref={containerRef} className={`absolute inset-0 w-full h-full -z-10 ${className}`} style={style} {...rest} />
+    <div ref={containerRef} className={`absolute inset-0 w-full h-full -z-10 blur-sm ${className}`} style={style} {...rest} />
   );
 }

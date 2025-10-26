@@ -78,9 +78,9 @@ export default function ActionButtonsDemo() {
         <div className="mt-12 p-6 bg-[#2a3a2a]/50 rounded-lg border border-white/10">
           <h3 className="text-lg font-semibold text-white mb-3">Usage</h3>
           <div className="text-gray-300 space-y-2">
-            <p>• Import: <code className="bg-black/50 px-2 py-1 rounded text-[#F3C623]">import ActionButtons from "@/components/action-buttons"</code></p>
-            <p>• Use: <code className="bg-black/50 px-2 py-1 rounded text-[#F3C623]">&lt;ActionButtons onAgentDashboard={...} onExploreAssets={...} /&gt;</code></p>
-            <p>• Props: <code className="bg-black/50 px-2 py-1 rounded text-[#F3C623]">onAgentDashboard</code>, <code className="bg-black/50 px-2 py-1 rounded text-[#F3C623]">onExploreAssets</code>, <code className="bg-black/50 px-2 py-1 rounded text-[#F3C623]">className</code></p>
+            <p>• Import: <code className="bg-black/50 px-2 py-1 rounded text-[#FF5CA8]">import ActionButtons from "@/components/action-buttons"</code></p>
+            <p>• Use: <code className="bg-black/50 px-2 py-1 rounded text-[#FF5CA8]">&lt;ActionButtons onAgentDashboard={...} onExploreAssets={...} /&gt;</code></p>
+            <p>• Props: <code className="bg-black/50 px-2 py-1 rounded text-[#FF5CA8]">onAgentDashboard</code>, <code className="bg-black/50 px-2 py-1 rounded text-[#FF5CA8]">onExploreAssets</code>, <code className="bg-black/50 px-2 py-1 rounded text-[#FF5CA8]">className</code></p>
           </div>
         </div>
       </div>

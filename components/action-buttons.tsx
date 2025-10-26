@@ -32,27 +32,27 @@ export default function ActionButtons({
         {/* Text */}
         <span className="font-medium text-sm">Agent Dashboard</span>
         
-        {/* Subtle glow on hover */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#F3C623]/10 to-[#D9A800]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  {/* Subtle glow on hover */}
+  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#A3B18A]/10 to-[#A3B18A]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </motion.button>
 
       {/* Explore Assets Button - Outline style */}
       <motion.button
         onClick={onExploreAssets}
-  className="group relative flex items-center gap-3 rounded-full border border-[#FF5CA8]/60 bg-transparent px-6 py-3 text-[#FF5CA8] backdrop-blur-md hover:border-[#FF5CA8] hover:bg-[#FF5CA8]/10 transition-all duration-300"
+  className="group relative flex items-center gap-3 rounded-full border border-[#A3B18A]/60 bg-transparent px-6 py-3 text-[#A3B18A] backdrop-blur-md hover:border-[#A3B18A] hover:bg-[#A3B18A]/10 transition-all duration-300"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
         {/* Icon */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#FF5CA8]/60 bg-transparent group-hover:bg-[#FF5CA8]/20 transition-colors duration-300">
-          <Compass className="h-4 w-4 text-[#FF5CA8]" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#A3B18A]/60 bg-transparent group-hover:bg-[#A3B18A]/20 transition-colors duration-300">
+          <Compass className="h-4 w-4 text-[#A3B18A]" />
         </div>
         
         {/* Text */}
         <span className="font-medium text-sm">Explore Assets</span>
         
         {/* Subtle glow on hover */}
-  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#FF5CA8]/5 to-[#C43E82]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#A3B18A]/5 to-[#A3B18A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </motion.button>
     </div>
   )

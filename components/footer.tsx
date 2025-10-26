@@ -32,15 +32,15 @@ export function Footer() {
           </div>
           
           <div className="flex justify-center gap-4 items-center">
-            <Link href="https://x.com/Dev_anik2003" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="https://x.com/Dev_anik2003" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Twitter className="h-6 w-6" />
               <span className="sr-only">Twitter</span>
             </Link>
-            <Link href="https://github.com/ansu555/10x_Swap" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="https://github.com/ansu555/10x_Swap" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Github className="h-6 w-6" />
               <span className="sr-only">GitHub</span>
             </Link>
-            <Link href="https://www.linkedin.com/in/anikdas2003/" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="https://www.linkedin.com/in/anikdas2003/" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Linkedin className="h-6 w-6" />
               <span className="sr-only">LinkedIn</span>
             </Link>
@@ -68,19 +68,19 @@ export function Footer() {
             <GuidelinesBubble />
           </div>
           <div className="flex gap-4 items-center justify-self-end">
-            <Link href="https://x.com/Dev_anik2003" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="https://x.com/Dev_anik2003" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Twitter className="h-6 w-6" />
               <span className="sr-only">Twitter</span>
             </Link>
-            <Link href="https://github.com/ansu555/crypto-market" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="https://github.com/ansu555/crypto-market" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Github className="h-6 w-6" />
               <span className="sr-only">GitHub</span>
             </Link>
-            <Link href="https://www.linkedin.com/in/anikdas2003/" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="https://www.linkedin.com/in/anikdas2003/" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Linkedin className="h-6 w-6" />
               <span className="sr-only">LinkedIn</span>
             </Link>
-            <Link href="mailto:anik200365@gmail.com" className="text-muted-foreground hover:text-primary dark:text-[#FF5CA8]/60 dark:hover:text-[#FF5CA8] transition-colors">
+            <Link href="mailto:anik200365@gmail.com" className="text-muted-foreground hover:text-primary dark:text-[#DAD7CD]/60 dark:hover:text-[#DAD7CD] transition-colors">
               <Mail className="h-6 w-6" />
               <span className="sr-only">Email</span>
             </Link>

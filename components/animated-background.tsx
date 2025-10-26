@@ -17,7 +17,7 @@ function FloatingPaths({ position }: { position: number }) {
 
   return (
     <svg
-  className="w-full h-full text-primary dark:text-[#FF5CA8]"
+      className="w-full h-full text-primary dark:text-[#FF5CA8]" style={{ filter: 'blur(6px)' }}
       viewBox="0 0 696 316"
       fill="none"
     >
@@ -49,7 +49,7 @@ export default function BackgroundPaths() {
   return (
     <div
       data-background-paths
-      className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+      className="fixed inset-0 -z-10 overflow-hidden pointer-events-none blur-sm"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-white via-white/40 to-white/20 dark:from-neutral-950 dark:via-neutral-900/80 dark:to-neutral-800/60" />
       <div className="absolute inset-0">

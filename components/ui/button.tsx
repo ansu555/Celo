@@ -9,15 +9,15 @@ const buttonVariants = cva(
       {
         variants: {
           variant: {
-            default: "bg-red-600 text-white hover:bg-red-700 dark:bg-[#FF5CA8] dark:text-black dark:hover:bg-[#FF5CA8]/90",
+            default: "bg-[#DAD7CD] text-black hover:bg-[#DAD7CD]/90 dark:bg-[#DAD7CD] dark:text-black dark:hover:bg-[#DAD7CD]/90",
         destructive:
-          "bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:text-white dark:hover:bg-red-800",
+          "bg-[#DAD7CD] text-black hover:bg-[#DAD7CD]/90 dark:bg-[#DAD7CD] dark:text-black dark:hover:bg-[#DAD7CD]/90",
         outline:
-          "border border-red-600/40 bg-white text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-[#FF5CA8]/20 dark:bg-transparent dark:text-[#FF5CA8] dark:hover:border-[#FF5CA8]/40 dark:hover:bg-[#FF5CA8]/10 dark:hover:text-[#FF5CA8]",
+          "border border-[#DAD7CD]/40 bg-white text-[#DAD7CD] hover:bg-[#DAD7CD]/10 hover:text-[#DAD7CD] dark:border-[#DAD7CD]/20 dark:bg-transparent dark:text-[#DAD7CD] dark:hover:border-[#DAD7CD]/40 dark:hover:bg-[#DAD7CD]/10 dark:hover:text-[#DAD7CD]",
         secondary:
-          "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-[#FF5CA8]/20 dark:text-[#FF5CA8] dark:hover:bg-[#FF5CA8]/30",
-        ghost: "text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-[#FF5CA8] dark:hover:bg-[#FF5CA8]/10 dark:hover:text-[#FF5CA8]",
-        link: "text-red-600 underline-offset-4 hover:underline dark:text-[#FF5CA8] dark:hover:text-[#FF5CA8]/80",
+          "bg-[#DAD7CD]/20 text-[#DAD7CD] hover:bg-[#DAD7CD]/30 dark:bg-[#DAD7CD]/20 dark:text-[#DAD7CD] dark:hover:bg-[#DAD7CD]/30",
+  ghost: "text-[#DAD7CD] hover:bg-[#DAD7CD]/10 hover:text-[#DAD7CD] dark:text-[#DAD7CD] dark:hover:bg-[#DAD7CD]/10 dark:hover:text-[#DAD7CD]",
+  link: "text-[#DAD7CD] underline-offset-4 hover:underline dark:text-[#DAD7CD] dark:hover:text-[#DAD7CD]/80",
       },
       size: {
         default: "h-10 px-4 py-2",

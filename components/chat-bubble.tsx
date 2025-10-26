@@ -147,8 +147,8 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
   const isFooter = variant === "footer"
   const wrapperClass = isFooter ? (align === "left" ? "relative mr-auto" : "relative ml-auto") : undefined
   const buttonClass = isFooter
-  ? "relative z-40 grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl shadow-red-500/20 focus:outline-none dark:from-[#FF5CA8] dark:to-[#C43E82] dark:shadow-[#FF5CA8]/20"
-  : "fixed bottom-8 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl shadow-red-500/20 focus:outline-none dark:from-[#FF5CA8] dark:to-[#C43E82] dark:shadow-[#FF5CA8]/20"
+  ? "relative z-40 grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] text-white shadow-xl shadow-[#DAD7CD]/20 focus:outline-none dark:from-[#DAD7CD] dark:to-[#DAD7CD] dark:shadow-[#DAD7CD]/20"
+  : "fixed bottom-8 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] text-white shadow-xl shadow-[#DAD7CD]/20 focus:outline-none dark:from-[#DAD7CD] dark:to-[#DAD7CD] dark:shadow-[#DAD7CD]/20"
   const panelClass = isFooter
     ? (align === "left"
         ? "absolute bottom-[calc(100%+0.5rem)] left-0 z-50 flex h-[34rem] w-[26rem] flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white/95 text-slate-900 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-[#171717]/95 dark:text-slate-100"
@@ -165,9 +165,9 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
         whileHover={{ scale: 1.07 }}
         whileTap={{ scale: 0.95 }}
       >
-  <span className="absolute inset-0 rounded-full bg-red-500/30 blur-xl -z-10 dark:bg-[#FF5CA8]/30" aria-hidden />
+  <span className="absolute inset-0 rounded-full bg-[#DAD7CD]/30 blur-xl -z-10 dark:bg-[#DAD7CD]/30" aria-hidden />
         <MessageCircle className="h-6 w-6" />
-  <span className="absolute -z-10 inline-flex h-full w-full animate-ping rounded-full bg-red-400/20 dark:bg-[#FF5CA8]/20" aria-hidden />
+  <span className="absolute -z-10 inline-flex h-full w-full animate-ping rounded-full bg-[#DAD7CD]/20 dark:bg-[#DAD7CD]/20" aria-hidden />
       </motion.button>
 
       {/* Chat Panel */}
@@ -185,7 +185,7 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
             <div className="flex items-center justify-between gap-3 border-b border-slate-200/60 px-4 py-3 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <div className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
-                  <Bot className="h-4 w-4 text-red-400 dark:text-[#FF5CA8]" />
+                  <Bot className="h-4 w-4 text-[#DAD7CD] dark:text-[#DAD7CD]" />
                 </div>
                 <div className="text-sm font-semibold">Accorto AI Agent</div>
               </div>
@@ -204,7 +204,7 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   <button
                     key={x.label}
                     onClick={() => usePreset(x.prompt)}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:border-red-400/40 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:border-[#FF5CA8]/50"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:border-[#DAD7CD]/40 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:border-[#DAD7CD]/50"
                   >
                     {x.label}
                   </button>
@@ -225,8 +225,8 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   </button>
                 </div>
                 {showRules && (
-                  <div className="relative rounded-lg border border-red-300/30 bg-red-50/80 p-2 dark:border-[#FF5CA8]/30 dark:bg-[#FF5CA8]/10">
-                    <div className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-red-400/60 dark:bg-[#FF5CA8]/60" aria-hidden />
+                  <div className="relative rounded-lg border border-[#DAD7CD]/30 bg-[#DAD7CD]/10 p-2 dark:border-[#DAD7CD]/30 dark:bg-[#DAD7CD]/10">
+                    <div className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-[#DAD7CD]/60 dark:bg-[#DAD7CD]/60" aria-hidden />
                     <div className="grid max-h-48 gap-2 overflow-y-auto pr-2 pl-2">
                       <div>
                         <div className="mb-1 font-medium text-slate-900 dark:text-slate-200">Supported actions</div>
@@ -278,13 +278,13 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   <div className="flex max-w-[85%] items-start gap-2">
                     {m.role === "assistant" && (
                       <div className="mt-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 sm:grid">
-                        <Bot className="h-3.5 w-3.5 text-red-400 dark:text-[#FF5CA8]" />
+                        <Bot className="h-3.5 w-3.5 text-[#DAD7CD] dark:text-[#DAD7CD]" />
                       </div>
                     )}
                     <div
                       className={
                         m.role === "user"
-                          ? "max-w-full rounded-2xl bg-gradient-to-br from-red-500 to-red-600 px-3 py-2 text-sm text-white shadow-md dark:from-[#FF5CA8] dark:to-[#C43E82]"
+                          ? "max-w-full rounded-2xl bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] px-3 py-2 text-sm text-white shadow-md dark:from-[#DAD7CD] dark:to-[#DAD7CD]"
                           : "max-w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
                       }
                       style={{ whiteSpace: 'pre-wrap' }}
@@ -322,7 +322,7 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   disabled={loading}
                   whileHover={{ scale: loading ? 1 : 1.05 }}
                   whileTap={{ scale: loading ? 1 : 0.95 }}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow shadow-red-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:from-[#FF5CA8] dark:to-[#C43E82] dark:shadow-[#FF5CA8]/20"
+                  className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] text-white shadow shadow-[#DAD7CD]/20 disabled:cursor-not-allowed disabled:opacity-60 dark:from-[#DAD7CD] dark:to-[#DAD7CD] dark:shadow-[#DAD7CD]/20"
                 >
                   {loading ? (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
