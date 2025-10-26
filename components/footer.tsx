@@ -12,7 +12,7 @@ export function Footer() {
           <div className="text-center">
             <div className="flex items-center font-bold text-lg mb-2">
               <img 
-                src="/10xswap_logo.png" 
+                src="/Accorto_logo.png" 
                 alt="Accorto Logo" 
                 className="h-10 w-10 mr-2"
               />
@@ -52,7 +52,7 @@ export function Footer() {
           <div className="flex items-center gap-3 justify-self-start">
             <div className="flex items-center font-bold text-lg mb-2">
               <img 
-                src="/10xswap_logo.png" 
+                src="/Accorto_logo.png" 
                 alt="Accorto Logo" 
                 className="h-10 w-10 mr-2"
               />
