@@ -89,7 +89,7 @@ export default function TradePage() {
               placeholder="Search tokens, pools..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 h-10 text-sm bg-white dark:bg-[#171717] border-2 focus-visible:ring-primary dark:focus-visible:ring-[#F3C623]"
+              className="w-full pl-10 h-10 text-sm bg-white dark:bg-[#171717] border-2 focus-visible:ring-red-600 dark:focus-visible:ring-red-600"
             />
           </div>
 

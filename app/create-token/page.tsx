@@ -247,7 +247,7 @@ export default function CreateTokenPage() {
             <DialogTrigger asChild>
               <Button className="rounded-[32px] bg-white/10 text-white border border-white/15 backdrop-blur-lg hover:bg-white/15">Launch your token</Button>
             </DialogTrigger>
-            <DialogContent className="border border-white/10 bg-white/10 backdrop-blur-xl text-white">
+            <DialogContent className="border border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl text-white dark:border-white/10">
               <DialogHeader>
                 <DialogTitle>Launch your token</DialogTitle>
                 <DialogDescription className="text-white/70">Fill the details below and deploy in one click.</DialogDescription>
@@ -255,15 +255,15 @@ export default function CreateTokenPage() {
               <div className="space-y-4 pt-2">
                 <div className="grid gap-2">
                   <Label htmlFor="token-name" className="text-white/90">Token Name</Label>
-                  <Input id="token-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Aksha" className="bg-white/5 border-white/15 text-white placeholder:text-white/50" />
+                  <Input id="token-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Aksha" className="bg-white/10 dark:bg-[#171717]/80 border-white/20 dark:border-white/10 text-white placeholder:text-white/50" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="token-symbol" className="text-white/90">Token Symbol</Label>
-                  <Input id="token-symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="e.g., AKS" className="bg-white/5 border-white/15 text-white placeholder:text-white/50" />
+                  <Input id="token-symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="e.g., AKS" className="bg-white/10 dark:bg-[#171717]/80 border-white/20 dark:border-white/10 text-white placeholder:text-white/50" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="initial-supply" className="text-white/90">Initial Supply</Label>
-                  <Input id="initial-supply" type="number" value={initialSupply} onChange={(e) => setInitialSupply(e.target.value)} placeholder="e.g., 1000000" className="bg-white/5 border-white/15 text-white placeholder:text-white/50" />
+                  <Input id="initial-supply" type="number" value={initialSupply} onChange={(e) => setInitialSupply(e.target.value)} placeholder="e.g., 1000000" className="bg-white/10 dark:bg-[#171717]/80 border-white/20 dark:border-white/10 text-white placeholder:text-white/50" />
                 </div>
               </div>
               <DialogFooter>
@@ -278,7 +278,7 @@ export default function CreateTokenPage() {
       </div>
 
       {(status || txHash || tokenAddress) && (
-        <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/90 backdrop-blur">
+        <div className="mb-8 rounded-2xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 p-4 text-sm text-white/90 backdrop-blur-xl dark:border-white/10">
           {status && <div className="mb-1">{status}</div>}
           {txHash && (
             <div className="truncate">
@@ -298,11 +298,11 @@ export default function CreateTokenPage() {
         <span className="text-xs text-white/60">{createdTokens.length} total</span>
       </div>
       {createdTokens.length === 0 && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/80 backdrop-blur">No tokens deployed yet.</div>
+        <div className="rounded-2xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 p-6 text-sm text-white/80 backdrop-blur-xl dark:border-white/10">No tokens deployed yet.</div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {createdTokens.map((t, i) => (
-          <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+          <div key={i} className="rounded-2xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 p-4 backdrop-blur-xl dark:border-white/10">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-base font-semibold text-white">{t.name}</div>
               {t.symbol && <span className="text-xs text-white/60">{t.symbol}</span>}
@@ -327,11 +327,11 @@ export default function CreateTokenPage() {
       <div className="mt-10">
         <h2 className="text-xl font-semibold mb-3">Token Transfer Logs</h2>
         {logs.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/80 backdrop-blur">No transfers found. Click "View transfers" on a token above.</div>
+          <div className="rounded-2xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 p-6 text-sm text-white/80 backdrop-blur-xl dark:border-white/10">No transfers found. Click "View transfers" on a token above.</div>
         ) : (
           <div className="space-y-3">
             {logs.map((log, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/90 backdrop-blur">
+              <div key={i} className="rounded-2xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 p-4 text-sm text-white/90 backdrop-blur-xl dark:border-white/10">
                 <div className="truncate"><span className="text-white/60">From:</span> {log.from}</div>
                 <div className="truncate"><span className="text-white/60">To:</span> {log.to}</div>
                 <div><span className="text-white/60">Amount:</span> {log.value}</div>

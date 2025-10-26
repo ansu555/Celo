@@ -199,7 +199,7 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center font-extrabold text-lg tracking-tight">
           <img 
-            src="/10xswap_logo.png" 
+            src="/Accorto_logo.png" 
             alt="Accorto Logo" 
             className="h-8 w-8 mr-2"
           />

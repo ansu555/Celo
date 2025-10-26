@@ -512,7 +512,7 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
 
   return (
     <>
-      <Card className="w-full rounded-xl border border-border shadow-lg bg-card">
+      <Card className="w-full rounded-xl border border-white/20 shadow-lg bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl dark:border-white/10">
         <CardContent className="p-3 space-y-3.5">
           {/* Tab Buttons */}
           <div className="flex items-center p-1 bg-muted/30 rounded-md h-[42px] relative">
@@ -770,8 +770,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
                 <Button
                   className={cn(
                     "w-full h-11 text-base font-semibold rounded-md px-4 py-2.5 active:scale-[0.99] transition-all duration-300",
-                    "bg-primary hover:bg-primary/90 dark:bg-[#F3C623] dark:hover:bg-[#F3C623]/90",
-                    "dark:text-black"
+                    "bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700",
+                    "text-white"
                   )}
                   onClick={() => {
                     console.log("Connect wallet clicked");
@@ -783,8 +783,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
                 <Button
                   className={cn(
                     "w-full h-11 text-base font-semibold rounded-md px-4 py-2.5 active:scale-[0.99] transition-all duration-300",
-                    "bg-primary hover:bg-primary/90 dark:bg-[#F3C623] dark:hover:bg-[#F3C623]/90",
-                    "dark:text-black",
+                    "bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700",
+                    "text-white",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                   disabled={isSwapDisabled || isSwapping || quoteLoading}
