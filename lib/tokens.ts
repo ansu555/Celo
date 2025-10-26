@@ -86,6 +86,16 @@ const DEFAULT_SEPOLIA_TOKENS: Record<string, TokenInfo> = {
     decimals: 18,
     coingeckoId: 'celo-euro'
   },
+  TKA: {
+    symbol: 'TKA',
+    address: (process.env.NEXT_PUBLIC_TEST_TOKEN_A || '0x12846d5C14622d085B0bbD9033e87d08C59a67d1') as Address,
+    decimals: 18
+  },
+  TKB: {
+    symbol: 'TKB',
+    address: (process.env.NEXT_PUBLIC_TEST_TOKEN_B || '0x...') as Address,
+    decimals: 18
+  },
   CREAL: {
     symbol: 'cREAL',
     address: (process.env.CELO_CREAL_ADDRESS_SEPOLIA || '0xE4D517785D091D3c54818832dB6094bcc2744545') as Address,
@@ -107,7 +117,9 @@ const DEFAULT_SEPOLIA_TOKENS: Record<string, TokenInfo> = {
   }
 }
 
-// Dynamic environment token loader (supports up to 5 custom tokens per chain)
+// Dynamic environment token loader (supports up to 5 custom tokens per chain)// Funded test pair for frontend
+export const FUNDED_TEST_PAIR = process.env.NEXT_PUBLIC_TEST_PAIR || '0x...';
+
 function getEnvTokens(prefix: string): Record<string, TokenInfo> {
   const out: Record<string, TokenInfo> = {}
   for (let i = 1; i <= 5; i++) {

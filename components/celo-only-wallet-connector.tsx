@@ -6,7 +6,7 @@ import { Button } from './ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Alert, AlertDescription } from './ui/alert'
-import { celo, celoAlfajores } from '../app/services/celoWeb3'
+import { celo, celoAlfajores, celoSepolia } from '../app/services/celoWeb3'
 import { useEffect, useState } from 'react'
 
 export function CeloOnlyWalletConnector() {
@@ -19,8 +19,9 @@ export function CeloOnlyWalletConnector() {
   const [isMiniPay, setIsMiniPay] = useState(false)
 
   const isCeloMainnet = chain?.id === celo.id
-  const isCeloTestnet = chain?.id === celoAlfajores.id
-  const isCeloChain = isCeloMainnet || isCeloTestnet
+  const isCeloAlfajores = chain?.id === celoAlfajores.id
+  const isCeloSepolia = chain?.id === celoSepolia.id
+  const isCeloChain = isCeloMainnet || isCeloAlfajores || isCeloSepolia
 
   // Detect MiniPay wallet
   useEffect(() => {
@@ -47,7 +48,7 @@ export function CeloOnlyWalletConnector() {
           🌾 Celo Wallet Only
           {isCeloChain && (
             <Badge variant="secondary" className="bg-green-100 text-green-800">
-              {isCeloMainnet ? 'Celo Mainnet' : 'Celo Alfajores'}
+              {isCeloMainnet ? 'Celo Mainnet' : isCeloSepolia ? 'Celo Sepolia' : 'Celo Alfajores'}
             </Badge>
           )}
           {isMiniPay && (
@@ -99,7 +100,7 @@ export function CeloOnlyWalletConnector() {
                   <div className="space-y-2">
                     <p className="font-medium">❌ Unsupported Network Detected</p>
                     <p className="text-sm">
-                      This application only supports Celo networks. Please switch to Celo Mainnet or Alfajores testnet.
+                      This application only supports Celo networks. Please switch to Celo Mainnet, Sepolia, or Alfajores testnet.
                     </p>
                     <div className="flex gap-2 pt-2">
                       <Button
@@ -117,6 +118,14 @@ export function CeloOnlyWalletConnector() {
                         className="text-green-700 border-green-300 hover:bg-green-50"
                       >
                         Switch to Alfajores
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => switchChain({ chainId: celoSepolia.id })}
+                        className="text-green-700 border-green-300 hover:bg-green-50"
+                      >
+                        Switch to Sepolia
                       </Button>
                     </div>
                   </div>

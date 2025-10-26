@@ -1,6 +1,6 @@
 // hooks/useCeloOnly.ts - Celo-only wallet hook with strict network validation
 import { useAccount, useSwitchChain, useDisconnect } from 'wagmi'
-import { celo, celoAlfajores } from '../app/services/celoWeb3'
+import { celo, celoAlfajores, celoSepolia } from '../app/services/celoWeb3'
 import { useEffect, useState } from 'react'
 
 export function useCeloOnly() {
@@ -11,8 +11,9 @@ export function useCeloOnly() {
   const [networkWarning, setNetworkWarning] = useState(false)
 
   const isCeloMainnet = chain?.id === celo.id
-  const isCeloTestnet = chain?.id === celoAlfajores.id
-  const isCeloChain = isCeloMainnet || isCeloTestnet
+  const isCeloAlfajores = chain?.id === celoAlfajores.id
+  const isCeloSepolia = chain?.id === celoSepolia.id
+  const isCeloChain = isCeloMainnet || isCeloAlfajores || isCeloSepolia
 
   // Detect MiniPay wallet
   useEffect(() => {
@@ -58,13 +59,22 @@ export function useCeloOnly() {
         explorer: 'https://explorer.celo.org'
       }
     }
-    if (isCeloTestnet) {
+    if (isCeloAlfajores) {
       return {
         name: 'Celo Alfajores',
         chainId: celoAlfajores.id,
         isTestnet: true,
         rpcUrl: 'https://alfajores-forno.celo-testnet.org',
         explorer: 'https://alfajores-blockscout.celo-testnet.org'
+      }
+    }
+    if (isCeloSepolia) {
+      return {
+        name: 'Celo Sepolia',
+        chainId: celoSepolia.id,
+        isTestnet: true,
+        rpcUrl: 'https://forno.celo-sepolia.celo-testnet.org',
+        explorer: 'https://celo-sepolia.celoscan.io'
       }
     }
     return null
@@ -91,7 +101,7 @@ export function useCeloOnly() {
     // Celo-specific info
     isCeloChain,
     isCeloMainnet,
-    isCeloTestnet,
+  isCeloTestnet: isCeloAlfajores || isCeloSepolia,
     isMiniPay,
     networkWarning,
     
@@ -100,7 +110,8 @@ export function useCeloOnly() {
     
     // Actions
     switchToCeloMainnet: () => switchChain({ chainId: celo.id }),
-    switchToCeloTestnet: () => switchChain({ chainId: celoAlfajores.id }),
+  switchToCeloTestnet: () => switchChain({ chainId: celoAlfajores.id }),
+  switchToCeloSepolia: () => switchChain({ chainId: celoSepolia.id }),
     enforceCeloNetwork,
     disconnect,
     
@@ -110,5 +121,6 @@ export function useCeloOnly() {
     // Constants
     CELO_MAINNET_ID: celo.id,
     CELO_TESTNET_ID: celoAlfajores.id,
+    CELO_SEPOLIA_ID: celoSepolia.id,
   }
 }

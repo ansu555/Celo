@@ -10,6 +10,8 @@ import { fetchUbeswapPools, type FetchUbeswapPoolsOptions } from './fetchers/ube
 
 export interface Pool {
   id: string
+  address?: string
+  dex?: string
   token0: TokenInfo
   token1: TokenInfo
   reserve0: bigint
@@ -43,6 +45,8 @@ const defaultPools: Pool[] = (() => {
   return [
     {
       id: 'CELO-cUSD',
+      address: '0xvirtual-ce-cusd',
+      dex: 'virtual',
       token0: CELO,
       token1: CUSD,
       reserve0: toUnits('5000', CELO.decimals),     // 5,000 CELO
@@ -52,6 +56,8 @@ const defaultPools: Pool[] = (() => {
     },
     {
       id: 'cUSD-cEUR',
+      address: '0xvirtual-cusd-ceur',
+      dex: 'virtual',
       token0: CUSD,
       token1: CEUR,
       reserve0: toUnits('200000', CUSD.decimals),
@@ -63,6 +69,15 @@ const defaultPools: Pool[] = (() => {
 })()
 
 let runtimePools: Pool[] | null = null
+let lastRefreshMs = 0
+let refreshPromise: Promise<Pool[]> | null = null
+let lastRefreshError: Error | null = null
+
+const DEFAULT_CACHE_TTL_MS = Number(process.env.ROUTING_POOL_CACHE_TTL_MS || 60_000)
+
+function nowMs(): number {
+  return Date.now()
+}
 
 function activePools(): Pool[] {
   if (runtimePools && runtimePools.length) {
@@ -122,10 +137,54 @@ export function quoteBest(tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn: big
 
 export function setRuntimePools(pools: Pool[] | null): void {
   runtimePools = pools && pools.length ? pools : null
+  if (runtimePools) {
+    lastRefreshMs = nowMs()
+    lastRefreshError = null
+  }
 }
 
-export async function refreshRuntimePools(options: FetchUbeswapPoolsOptions = {}): Promise<Pool[]> {
-  const pools = await fetchUbeswapPools(options)
-  setRuntimePools(pools)
-  return pools
+export async function ensureRuntimePools(options: FetchUbeswapPoolsOptions = {}): Promise<Pool[]> {
+  const ttl = Number.isFinite(DEFAULT_CACHE_TTL_MS) ? DEFAULT_CACHE_TTL_MS : 60_000
+  const isFresh = runtimePools && (nowMs() - lastRefreshMs) < ttl
+  if (isFresh) {
+    return runtimePools!
+  }
+
+  if (!refreshPromise) {
+    refreshPromise = fetchUbeswapPools(options)
+      .then((pools) => {
+        if (!pools.length) {
+          console.warn('[routing] fetched 0 pools; retaining previous cache or defaults')
+          return activePools()
+        }
+        setRuntimePools(pools)
+        return runtimePools ?? defaultPools
+      })
+      .catch((error) => {
+        lastRefreshError = error instanceof Error ? error : new Error(String(error))
+        console.error('[routing] failed to refresh pools:', lastRefreshError)
+        return activePools()
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+
+  return refreshPromise
+}
+
+export async function refreshRuntimePools(options: FetchUbeswapPoolsOptions = {}, { force = false }: { force?: boolean } = {}): Promise<Pool[]> {
+  if (force) {
+    lastRefreshMs = 0
+  }
+  return ensureRuntimePools(options)
+}
+
+export function getRuntimePoolStatus() {
+  return {
+    lastRefreshMs,
+    hasRuntimePools: !!runtimePools?.length,
+    poolCount: runtimePools?.length ?? 0,
+    lastRefreshError
+  }
 }

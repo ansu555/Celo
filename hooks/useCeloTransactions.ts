@@ -1,7 +1,7 @@
 // hooks/useCeloTransactions.ts - Celo-specific transaction handling
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits, formatUnits } from 'viem'
-import { celo, celoAlfajores } from '../app/services/celoWeb3'
+import { celo, celoAlfajores, celoSepolia } from '../app/services/celoWeb3'
 
 // Celo token addresses
 const CELO_TOKENS = {
@@ -24,7 +24,7 @@ export function useCeloTransactions() {
     hash,
   })
 
-  const isTestnet = chain?.id === celoAlfajores.id
+  const isTestnet = chain?.id === celoAlfajores.id || chain?.id === celoSepolia.id
   const tokens = isTestnet ? CELO_TESTNET_TOKENS : CELO_TOKENS
 
   // Send CELO
@@ -135,6 +135,6 @@ export function useCeloTransactions() {
     // Network info
     chainId: chain?.id,
     isCeloMainnet: chain?.id === celo.id,
-    isCeloTestnet: chain?.id === celoAlfajores.id,
+    isCeloTestnet: chain?.id === celoAlfajores.id || chain?.id === celoSepolia.id,
   }
 }

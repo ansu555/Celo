@@ -1,13 +1,22 @@
 import { Address, erc20Abi, parseUnits } from 'viem'
 import RouterAbi from '@/lib/abi/Router.json'
 import { resolveTokenBySymbol } from './tokens'
-import { quoteBest, getPoolById, type Pool } from './routing/pools'
+import { quoteBest, getPoolById, ensureRuntimePools, type Pool } from './routing/pools'
 import { findBestRouteQuote, discoverRoutes, quoteRoute, type Route, type RouteQuote } from './routing/paths'
 // @ts-ignore Ensure local error module is picked up
 import { CustomSwapError, wrapUnknown, interpretExecutionError } from './errors'
 import { logSwapEvent } from './log'
 
 const DEFAULT_CELO_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 11142220)
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+
+function resolveRouterAddress(): Address {
+  const routerAddressRaw = (process.env.CUSTOM_SWAP_ROUTER || process.env.NEXT_PUBLIC_AMM_ROUTER || '').trim().toLowerCase()
+  if (!routerAddressRaw || routerAddressRaw === ZERO_ADDRESS) {
+    throw new CustomSwapError('ROUTER_NOT_CONFIGURED', 'CUSTOM_SWAP_ROUTER not set')
+  }
+  return routerAddressRaw as Address
+}
 
 function requireErc20Address(token: NonNullable<ReturnType<typeof resolveTokenBySymbol>>, context: string): Address {
   if (token.address === 'CELO') {
@@ -30,9 +39,21 @@ export async function reconstructRouteFromId(
 ): Promise<Route | null> {
   try {
     // Decode base64 routeId to get pool addresses
-    const poolAddresses = Buffer.from(routeId, 'base64').toString('utf-8')
-    const poolIds = poolAddresses.split('-')
-    
+    const decoded = Buffer.from(routeId, 'base64').toString('utf-8')
+    let poolIds: string[] = []
+
+    try {
+      const parsed = JSON.parse(decoded)
+      if (Array.isArray(parsed)) {
+        poolIds = parsed.map(String)
+      }
+    } catch (jsonError) {
+      const legacyIds = decoded.split('-').filter(Boolean)
+      if (legacyIds.length) {
+        poolIds = legacyIds
+      }
+    }
+
     if (!poolIds.length) return null
     
     // Get pools by ID
@@ -95,15 +116,14 @@ export async function simulateCustomSwap(
     throw new CustomSwapError('UNSUPPORTED_TOKEN', 'Unsupported token symbol(s)', { data: { tokenIn: params.tokenInSymbol, tokenOut: params.tokenOutSymbol } })
   }
   const amountInUnits = parseUnits(params.amount, tokenIn.decimals)
-  const routerAddress = (process.env.CUSTOM_SWAP_ROUTER || process.env.NEXT_PUBLIC_AMM_ROUTER || '').trim() as Address | ''
-  if (!routerAddress) {
-    throw new CustomSwapError('ROUTER_NOT_CONFIGURED', 'CUSTOM_SWAP_ROUTER not set')
-  }
+  const routerAddress = resolveRouterAddress()
 
   let expectedOutUnits: bigint
   let priceImpactBps: number | null = null
   let routeKind: string
   let routeData: Route | null = null
+
+  await ensureRuntimePools()
 
   // Check if specific route ID is provided
   if (params.routeId) {
@@ -255,6 +275,82 @@ export interface CustomSwapResult {
   }
 }
 
+export interface PreparedSwapTransaction {
+  routerAddress: Address
+  tokenIn: NonNullable<ReturnType<typeof resolveTokenBySymbol>>
+  tokenOut: NonNullable<ReturnType<typeof resolveTokenBySymbol>>
+  amountInUnits: bigint
+  minOutUnits: bigint
+  path: Address[]
+  deadline: bigint
+  deadlineSec: number
+  simulation: Awaited<ReturnType<typeof simulateCustomSwap>>
+}
+
+export async function prepareSwapTransaction(
+  ctx: {
+    chainId: number
+    publicClient: any
+    accountAddress: Address
+  },
+  params: CustomSwapParams
+): Promise<PreparedSwapTransaction> {
+  const routerAddress = resolveRouterAddress()
+
+  const tokenIn = resolveTokenBySymbol(params.tokenInSymbol, ctx.chainId)
+  const tokenOut = resolveTokenBySymbol(params.tokenOutSymbol, ctx.chainId)
+  if (!tokenIn || !tokenOut) {
+    throw new CustomSwapError('UNSUPPORTED_TOKEN', 'Unsupported token symbol(s)', {
+      data: { tokenIn: params.tokenInSymbol, tokenOut: params.tokenOutSymbol }
+    })
+  }
+
+  const amountInUnits = parseUnits(params.amount, tokenIn.decimals)
+  const simulation = await simulateCustomSwap(ctx, params)
+  const minOutUnits = BigInt(simulation.minOut)
+
+  let path: Address[]
+  if (simulation.route && simulation.route.hops && simulation.route.hops.length >= 2) {
+    const hops = simulation.route.hops
+    if (hops[0].toLowerCase() !== tokenIn.address.toLowerCase() || hops[hops.length - 1].toLowerCase() !== tokenOut.address.toLowerCase()) {
+      throw new CustomSwapError('ROUTE_NOT_FOUND', 'Simulated route endpoints mismatch tokenIn/tokenOut', {
+        data: { hops, tokenIn: tokenIn.address, tokenOut: tokenOut.address }
+      })
+    }
+    if (hops.some((h) => h === 'CELO')) {
+      throw new CustomSwapError('UNSUPPORTED_TOKEN', 'Native CELO route not supported yet. Use wrapped token.', {
+        data: { route: hops }
+      })
+    }
+    path = hops.map((address) => address as Address)
+  } else {
+    path = [requireErc20Address(tokenIn, 'router execution'), requireErc20Address(tokenOut, 'router execution')]
+  }
+
+  const nowSec = Math.floor(Date.now() / 1000)
+  const effectiveDeadlineSec = params.deadline
+    ? params.deadline
+    : nowSec + (params.deadlineSecondsFromNow ?? 300)
+
+  if (effectiveDeadlineSec <= nowSec) {
+    throw new CustomSwapError('DEADLINE_PAST', 'Deadline must be in the future', {
+      data: { deadline: effectiveDeadlineSec, now: nowSec }
+    })
+  }
+
+  return {
+    routerAddress,
+    tokenIn,
+    tokenOut,
+    amountInUnits,
+    minOutUnits,
+    path,
+    deadline: BigInt(effectiveDeadlineSec),
+    deadlineSec: effectiveDeadlineSec,
+    simulation
+  }
+}
+
 /**
  * prepareCustomSwap currently just returns naive expectations using 1:1 placeholder.
  * Later this will:
@@ -296,21 +392,18 @@ export async function executeCustomSwap(
   params: CustomSwapParams
 ): Promise<CustomSwapResult> {
   logSwapEvent('swap.request', { chainId: ctx.chainId, params })
-  
-  // Get simulation result which includes route information
-  const simulation = await simulateCustomSwap(ctx, params)
-  const tokenIn = resolveTokenBySymbol(params.tokenInSymbol, ctx.chainId)!
-  const tokenOut = resolveTokenBySymbol(params.tokenOutSymbol, ctx.chainId)!
-  const amountInUnits = parseUnits(params.amount, tokenIn.decimals)
-  const minOutUnits = BigInt(simulation.minOut)
 
-  // If tokenIn is ERC20 (not CELO native sentinel), ensure allowance to (future) router or target contract
-  // Allow server to fall back to NEXT_PUBLIC_AMM_ROUTER (set for frontend) if CUSTOM_SWAP_ROUTER is not provided
-  const routerAddress = (process.env.CUSTOM_SWAP_ROUTER || process.env.NEXT_PUBLIC_AMM_ROUTER || '').trim() as Address | ''
-  if (!routerAddress) {
-    logSwapEvent('swap.error', { code: 'ROUTER_NOT_CONFIGURED', params })
-    throw new CustomSwapError('ROUTER_NOT_CONFIGURED', 'CUSTOM_SWAP_ROUTER or NEXT_PUBLIC_AMM_ROUTER not set. Deploy router and set env variable.')
-  }
+  const {
+    routerAddress,
+    tokenIn,
+    tokenOut,
+    amountInUnits,
+    minOutUnits,
+    path,
+    deadline,
+    deadlineSec,
+    simulation
+  } = await prepareSwapTransaction(ctx, params)
 
   if (tokenIn.address !== 'CELO') {
     try {
@@ -341,18 +434,6 @@ export async function executeCustomSwap(
   }
 
   // Determine deadline (priority: explicit absolute > relative > default 300s)
-  const nowSec = Math.floor(Date.now() / 1000)
-  const effectiveDeadlineSec = params.deadline
-    ? params.deadline
-    : nowSec + (params.deadlineSecondsFromNow ?? 300)
-  const deadline = BigInt(effectiveDeadlineSec)
-  
-  if (effectiveDeadlineSec <= nowSec) {
-    throw new CustomSwapError('DEADLINE_PAST', 'Deadline must be in the future', { 
-      data: { deadline: effectiveDeadlineSec, now: nowSec } 
-    })
-  }
-
   // Gas fee overrides (EIP-1559). Convert Gwei strings to wei BigInt.
   let maxFeePerGas: bigint | undefined
   let maxPriorityFeePerGas: bigint | undefined
@@ -375,24 +456,6 @@ export async function executeCustomSwap(
   // integration with a service (e.g., Flashbots-style relay for supported chains).
   const privateTx = !!params.privateTx
   
-  // Build execution path. If simulation produced a multi-hop route, use it; otherwise fallback to direct.
-  let path: Address[]
-  if (simulation.route && simulation.route.hops && simulation.route.hops.length > 2) {
-  // Use simulated hops; validate first & map any CELO sentinel if ever present in route (currently tokens are ERC20s)
-    const hops = simulation.route.hops
-    // Basic sanity: first & last hop must match tokenIn/tokenOut
-    if (hops[0].toLowerCase() !== tokenIn.address.toLowerCase() || hops[hops.length - 1].toLowerCase() !== tokenOut.address.toLowerCase()) {
-      throw new CustomSwapError('ROUTE_NOT_FOUND', 'Simulated route endpoints mismatch tokenIn/tokenOut', { data: { hops, tokenIn: tokenIn.address, tokenOut: tokenOut.address } })
-    }
-    path = hops.map(a => a as Address)
-  } else {
-    // Direct path (two-token)
-    path = [
-      requireErc20Address(tokenIn, 'router execution'),
-      requireErc20Address(tokenOut, 'router execution')
-    ]
-  }
-
   const txWriteArgs: any = {
     address: routerAddress,
     abi: RouterAbi as any,
@@ -401,7 +464,8 @@ export async function executeCustomSwap(
       amountInUnits,
       minOutUnits,
       path,
-      params.recipient || ctx.accountAddress
+      params.recipient || ctx.accountAddress,
+      deadline
     ]
   }
   
@@ -447,7 +511,7 @@ export async function executeCustomSwap(
       slippageBps: params.slippageBps ?? 100,
       route: simulation.route,
       mev: {
-        deadline: effectiveDeadlineSec,
+        deadline: deadlineSec,
         privateTx,
         maxFeePerGasGwei: params.maxFeePerGasGwei,
         maxPriorityFeePerGasGwei: params.maxPriorityFeePerGasGwei

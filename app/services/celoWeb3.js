@@ -70,6 +70,7 @@ export const celoWagmiConfig = createConfig(
       [celo.id]: http(),
       [celoAlfajores.id]: http(),
       [celoSepolia.id]: http(),
+      [celoSepolia.id]: http(),
     },
     autoConnect: false,
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
@@ -77,4 +78,5 @@ export const celoWagmiConfig = createConfig(
 );
 
 // Export chain definitions for use in components
+export { celo, celoAlfajores, celoSepolia };
 export { celo, celoAlfajores, celoSepolia };
