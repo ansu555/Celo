@@ -43,6 +43,12 @@ const config: HardhatUserConfig = {
       url: configVariable("CELO_SEPOLIA_RPC_URL"),
       accounts: [configVariable("CELO_SEPOLIA_PRIVATE_KEY")],
     },
+    celoSepolia: {
+      type: "http",
+      chainType: "l1",
+      url: process.env.CELO_SEPOLIA_RPC || 'https://forno.celo-sepolia.celo-testnet.org/',
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
     sepolia: {
       type: "http",
       chainType: "l1",

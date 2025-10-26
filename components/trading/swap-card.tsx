@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAccount } from 'wagmi'
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
+import { parseUnits, encodeFunctionData, type Address as ViemAddress } from 'viem'
 import { Settings, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SettingsModal } from "./settings-modal"
@@ -15,6 +16,30 @@ import { AssetSelector } from "./asset-selector"
 import { useTradeableAssets, AssetInfo } from "../../hooks/use-tradeable-assets"
 import { useToast } from "@/hooks/use-toast"
 
+// ERC20 ABI for approve function
+const ERC20_ABI = [
+  {
+    name: 'approve',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: [{ type: 'bool' }]
+  },
+  {
+    name: 'allowance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' }
+    ],
+    outputs: [{ type: 'uint256' }]
+  }
+] as const
+
 type SwapCardProps = {
   onPairChange?: (from: AssetInfo | null, to: AssetInfo | null) => void
 }
@@ -23,6 +48,12 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
   const { address: walletAddress, isConnected } = useAccount()
   const { assets, loading: assetsLoading } = useTradeableAssets()
   const { toast } = useToast()
+  
+  // Wagmi hooks for transactions
+  const { data: hash, isPending: isSending, sendTransaction } = useSendTransaction()
+  const { data: approveHash, isPending: isApproving, writeContract } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
+  const { isLoading: isApprovingConfirm, isSuccess: isApproveConfirmed } = useWaitForTransactionReceipt({ hash: approveHash })
   
   const [fromToken, setFromToken] = useState<AssetInfo | null>(null)
   const [toToken, setToToken] = useState<AssetInfo | null>(null)
@@ -34,6 +65,54 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
   const [isSwapping, setIsSwapping] = useState(false)
   const [quoteLoading, setQuoteLoading] = useState(false)
   const [routeData, setRouteData] = useState<any>(null)
+  const [needsApproval, setNeedsApproval] = useState(false)
+  const [swapStep, setSwapStep] = useState<'idle' | 'approving' | 'swapping'>('idle')
+
+  // Handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      toast({
+        title: "✅ Swap Successful!",
+        description: (
+          <div className="mt-2 space-y-2 text-sm">
+            <div className="font-semibold text-green-600 dark:text-green-400">
+              Transaction Confirmed!
+            </div>
+            <div>Swapped: {fromAmount} {fromToken?.unitName}</div>
+            <div>Received: ~{toAmount} {toToken?.unitName}</div>
+            <a 
+              href={`https://explorer.celo.org/sepolia/tx/${hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline text-xs block"
+            >
+              View on Explorer →
+            </a>
+          </div>
+        ),
+        duration: 10000,
+      })
+      
+      // Clear form
+      setFromAmount('')
+      setToAmount('')
+      setRouteData(null)
+      setIsSwapping(false)
+      setSwapStep('idle')
+    }
+  }, [isConfirmed, hash])
+
+  // Handle approval confirmation
+  useEffect(() => {
+    if (isApproveConfirmed && approveHash) {
+      toast({
+        title: "✅ Approval Confirmed",
+        description: "You can now proceed with the swap",
+      })
+      setNeedsApproval(false)
+      setSwapStep('idle')
+    }
+  }, [isApproveConfirmed, approveHash])
 
   useEffect(() => {
     onPairChange?.(fromToken, toToken)
@@ -117,6 +196,69 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
     }
   }
 
+  // Check allowance for ERC20 tokens
+  const checkAllowance = async () => {
+    if (!fromToken || !walletAddress || fromToken.address === 'CELO') {
+      setNeedsApproval(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/swap/check-allowance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokenAddress: fromToken.address,
+          owner: walletAddress,
+          amount: parseFloat(fromAmount) * Math.pow(10, fromToken.decimals)
+        })
+      })
+
+      const { needsApproval: needs } = await response.json()
+      setNeedsApproval(needs)
+    } catch (error) {
+      console.error('Error checking allowance:', error)
+      setNeedsApproval(true)
+    }
+  }
+
+  // Approve token spending
+  const approveToken = async () => {
+    if (!fromToken || !walletAddress || fromToken.address === 'CELO') return
+
+    setSwapStep('approving')
+    
+    try {
+      // Get router address
+      const routerResponse = await fetch('/api/swap/router-address')
+      const { routerAddress } = await routerResponse.json()
+
+      const amountToApprove = parseUnits(fromAmount, fromToken.decimals)
+
+      // This will open MetaMask/Core wallet
+      writeContract({
+        address: fromToken.address as ViemAddress,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [routerAddress as ViemAddress, amountToApprove]
+      })
+
+      toast({
+        title: "🔐 Approval Required",
+        description: "Please approve the token spending in your wallet"
+      })
+
+    } catch (error) {
+      console.error('Approval error:', error)
+      toast({
+        title: "❌ Approval Failed",
+        description: error instanceof Error ? error.message : "Failed to approve",
+        variant: "destructive"
+      })
+      setSwapStep('idle')
+    }
+  }
+
   // Execute the swap
   const executeSwap = async () => {
     if (!fromToken || !toToken || !fromAmount || !walletAddress) {
@@ -128,19 +270,18 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
       return
     }
 
-    if (!routeData) {
-      toast({
-        title: "No Route Available",
-        description: "Unable to find a swap route for this pair",
-        variant: "destructive"
-      })
+    // Check if approval is needed first
+    await checkAllowance()
+    
+    if (needsApproval && fromToken.address !== 'CELO') {
+      await approveToken()
       return
     }
 
     setIsSwapping(true)
+    setSwapStep('swapping')
 
     try {
-      // Step 1: Prepare swap
       toast({
         title: "🔄 Preparing Swap...",
         description: "Building swap transaction"
@@ -148,7 +289,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
 
       const amountInBaseUnits = parseFloat(fromAmount) * Math.pow(10, fromToken.decimals)
 
-      const response = await fetch('/api/swap/execute', {
+      // Get swap transaction data from API
+      const response = await fetch('/api/swap/build-tx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -162,38 +304,33 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to execute swap')
+        throw new Error(errorData.error || 'Failed to build swap transaction')
       }
 
-      const { txHash } = await response.json()
+      const { tx } = await response.json()
 
-      // Step 2: SUCCESS!
       toast({
-        title: "✅ Swap Successful!",
-        description: (
-          <div className="mt-2 space-y-2 text-sm">
-            <div className="font-semibold text-green-600 dark:text-green-400">
-              Transaction Confirmed!
-            </div>
-            <div>Swapped: {fromAmount} {fromToken.unitName}</div>
-            <div>Received: ~{toAmount} {toToken.unitName}</div>
-            <a 
-              href={`https://explorer.celo.org/alfajores/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline text-xs block"
-            >
-              View on Celo Explorer →
-            </a>
-          </div>
-        ),
-        duration: 10000,
+        title: "💳 Confirm in Wallet",
+        description: "Please confirm the transaction in MetaMask/Core"
       })
 
-      // Clear form after successful swap
-      setFromAmount('')
-      setToAmount('')
-      setRouteData(null)
+      // This will open MetaMask/Core wallet for transaction signing
+      if (fromToken.address === 'CELO') {
+        // For native CELO, use sendTransaction
+        sendTransaction({
+          to: tx.to as ViemAddress,
+          data: tx.data as `0x${string}`,
+          value: BigInt(tx.value || '0'),
+          gas: tx.gas ? BigInt(tx.gas) : undefined
+        })
+      } else {
+        // For ERC20 tokens, use writeContract
+        sendTransaction({
+          to: tx.to as ViemAddress,
+          data: tx.data as `0x${string}`,
+          gas: tx.gas ? BigInt(tx.gas) : undefined
+        })
+      }
 
     } catch (error: unknown) {
       console.error('Swap error:', error)
@@ -203,8 +340,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
         variant: "destructive",
         duration: 7000,
       })
-    } finally {
       setIsSwapping(false)
+      setSwapStep('idle')
     }
   }
 
@@ -424,13 +561,18 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
                     "dark:text-black",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
-                  disabled={isSwapDisabled || isSwapping || quoteLoading}
+                  disabled={isSwapDisabled || isSwapping || quoteLoading || isApproving || isConfirming}
                   onClick={executeSwap}
                 >
-                  {isSwapping ? (
+                  {isApproving || isApprovingConfirm ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Swapping...
+                      {isApprovingConfirm ? 'Confirming Approval...' : 'Approving...'}
+                    </>
+                  ) : isSending || isConfirming ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isConfirming ? 'Confirming Swap...' : 'Confirm in Wallet...'}
                     </>
                   ) : quoteLoading ? (
                     <>
@@ -439,6 +581,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
                     </>
                   ) : isSwapDisabled ? (
                     "Enter Amount"
+                  ) : needsApproval && fromToken?.address !== 'CELO' ? (
+                    `Approve ${fromToken?.unitName}`
                   ) : !routeData ? (
                     "No Route Available"
                   ) : (

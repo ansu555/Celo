@@ -1,223 +1,172 @@
-import type { Address } from "viem";
+import type { Address } from 'viem'
 
-// Token registry supporting Avalanche (mainnet/testnet) and Celo
+// Token registry now targets Celo (mainnet 42220, Alfajores 44787, Sepolia 11142220)
 
 export type TokenInfo = {
-  symbol: string;
-  address: Address | "AVAX" | "CELO";
-  decimals: number;
-  coingeckoId?: string;
-};
+  symbol: string
+  address: Address | 'CELO'
+  decimals: number
+  coingeckoId?: string
+}
 
-// Mainnet token addresses (Avalanche C-Chain 43114)
-const MAINNET_TOKENS: Record<string, TokenInfo> = {
-  AVAX: {
-    symbol: "AVAX",
-    address: "AVAX",
-    decimals: 18,
-    coingeckoId: "avalanche-2",
-  },
-  WAVAX: {
-    symbol: "WAVAX",
-    address: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
-    decimals: 18,
-    coingeckoId: "wrapped-avax",
-  },
-  USDC: {
-    symbol: "USDC",
-    address: "0xB97EF9Ef8734C71901E3d8E6B9B81C7cD1cFAe25",
-    decimals: 6,
-    coingeckoId: "usd-coin",
-  },
-  "USDC.E": {
-    symbol: "USDC.e",
-    address: "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664",
-    decimals: 6,
-    coingeckoId: "usd-coin-avalanche-bridged-usdc-e",
-  },
-  USDT: {
-    symbol: "USDT",
-    address: "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
-    decimals: 6,
-    coingeckoId: "tether",
-  },
-  "USDT.E": {
-    symbol: "USDT.e",
-    address: "0xc7198437980c041c805A1EDcbA50c1Ce5db95118",
-    decimals: 6,
-    coingeckoId: "tether-avalanche-bridged-usdt-e",
-  },
-  WETH: {
-    symbol: "WETH",
-    address: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",
-    decimals: 18,
-    coingeckoId: "weth",
-  },
-  "WETH.E": {
-    symbol: "WETH.e",
-    address: "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",
-    decimals: 18,
-    coingeckoId: "weth",
-  },
-};
+const CELO_NATIVE: TokenInfo = { symbol: 'CELO', address: 'CELO', decimals: 18, coingeckoId: 'celo' }
 
-// Fuji testnet tokens (for reference/backward compatibility)
-const FUJI_TOKENS: Record<string, TokenInfo> = {
-  AVAX: {
-    symbol: "AVAX",
-    address: "AVAX",
-    decimals: 18,
-    coingeckoId: "avalanche-2",
-  },
-  WAVAX: {
-    symbol: "WAVAX",
-    address: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
-    decimals: 18,
-    coingeckoId: "wrapped-avax",
-  }, // Fuji WAVAX
-  USDC: {
-    symbol: "USDC",
-    address: "0x5425890298aed601595a70AB815c96711a31Bc65",
-    decimals: 6,
-    coingeckoId: "usd-coin",
-  }, // Fuji test USDC
-  WETH: {
-    symbol: "WETH.e",
-    address: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
-    decimals: 18,
-    coingeckoId: "weth",
-  },
-  "WETH.E": {
-    symbol: "WETH.e",
-    address: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
-    decimals: 18,
-    coingeckoId: "weth",
-  },
-  USDT: {
-    symbol: "USDT.e",
-    address: "0xA27f39E9C21b3376e1DA169e90e2DbA0C2e88d7b",
-    decimals: 6,
-    coingeckoId: "tether",
-  },
-  "USDT.E": {
-    symbol: "USDT.e",
-    address: "0xA27f39E9C21b3376e1DA169e90e2DbA0C2e88d7b",
-    decimals: 6,
-    coingeckoId: "tether",
-  },
-};
+const runtimeTokenRegistry = new Map<number, Record<string, TokenInfo>>()
 
-// Celo testnet tokens (Chain ID 11142220 - Celo Sepolia)
-const CELO_TOKENS: Record<string, TokenInfo> = {
-  CELO: { symbol: "CELO", address: "CELO", decimals: 18, coingeckoId: "celo" },
+// Celo Mainnet tokens (Chain ID 42220)
+const DEFAULT_MAINNET_TOKENS: Record<string, TokenInfo> = {
+  CELO: CELO_NATIVE,
   CUSD: {
-    symbol: "cUSD",
-    address: "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1",
+    symbol: 'cUSD',
+    address: (process.env.CELO_CUSD_ADDRESS_MAINNET || '0x765DE816845861e75A25fCA122bb6898B8B1282a') as Address,
     decimals: 18,
-    coingeckoId: "celo-dollar",
+    coingeckoId: 'celo-dollar'
   },
   CEUR: {
-    symbol: "cEUR",
-    address: "0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F",
+    symbol: 'cEUR',
+    address: (process.env.CELO_CEUR_ADDRESS_MAINNET || '0xd8763cBa276a3738E6De85B4B3BF5FDed6d6cA73') as Address,
     decimals: 18,
-    coingeckoId: "celo-euro",
+    coingeckoId: 'celo-euro'
   },
   CREAL: {
-    symbol: "cREAL",
-    address: "0xE4D517785D091D3c54818832dB6094bcc2744545",
+    symbol: 'cREAL',
+    address: (process.env.CELO_CREAL_ADDRESS_MAINNET || '0xe4d517785D091D3c54818832dB6094bcc0EFc7A0') as Address,
     decimals: 18,
-    coingeckoId: "celo-brazilian-real",
+    coingeckoId: 'celo-real'
+  },
+  USDC: {
+    symbol: 'USDC',
+    address: (process.env.CELO_USDC_ADDRESS_MAINNET || '0xcebA9300f2b948710d2653dD7B07f33A8B32118C') as Address,
+    decimals: 6,
+    coingeckoId: 'usd-coin'
+  },
+  USDT: {
+    symbol: 'USDT',
+    address: (process.env.CELO_USDT_ADDRESS_MAINNET || '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e') as Address,
+    decimals: 6,
+    coingeckoId: 'tether'
+  }
+}
+
+// Celo Alfajores testnet tokens (Chain ID 44787)
+const DEFAULT_ALFAJORES_TOKENS: Record<string, TokenInfo> = {
+  CELO: CELO_NATIVE,
+  CUSD: {
+    symbol: 'cUSD',
+    address: (process.env.CELO_CUSD_ADDRESS_ALFAJORES || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-dollar'
+  },
+  CEUR: {
+    symbol: 'cEUR',
+    address: (process.env.CELO_CEUR_ADDRESS_ALFAJORES || '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-euro'
+  },
+  CREAL: {
+    symbol: 'cREAL',
+    address: (process.env.CELO_CREAL_ADDRESS_ALFAJORES || '0xE4D517785D091D3c54818832dB6094bcc2744545') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-brazilian-real'
+  }
+}
+
+// Celo Sepolia testnet tokens (Chain ID 11142220 - default testnet)
+const DEFAULT_SEPOLIA_TOKENS: Record<string, TokenInfo> = {
+  CELO: CELO_NATIVE,
+  CUSD: {
+    symbol: 'cUSD',
+    address: (process.env.CELO_CUSD_ADDRESS_SEPOLIA || '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-dollar'
+  },
+  CEUR: {
+    symbol: 'cEUR',
+    address: (process.env.CELO_CEUR_ADDRESS_SEPOLIA || '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-euro'
+  },
+  CREAL: {
+    symbol: 'cREAL',
+    address: (process.env.CELO_CREAL_ADDRESS_SEPOLIA || '0xE4D517785D091D3c54818832dB6094bcc2744545') as Address,
+    decimals: 18,
+    coingeckoId: 'celo-brazilian-real'
   },
   // Celo Sepolia USDC (FiatTokenCeloV2_2 - verified from working transaction)
   USDC: {
-    symbol: "USDC",
-    address: "0x98Cc94F9271e36EB1c30d77c39dCb9929D9310C4",
+    symbol: 'USDC',
+    address: (process.env.CELO_USDC_ADDRESS_SEPOLIA || '0x98Cc94F9271e36EB1c30d77c39dCb9929D9310C4') as Address,
     decimals: 6,
-    coingeckoId: "usd-coin",
+    coingeckoId: 'usd-coin'
   },
   USDT: {
-    symbol: "USDT",
-    address: "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+    symbol: 'USDT',
+    address: (process.env.CELO_USDT_ADDRESS_SEPOLIA || '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e') as Address,
     decimals: 6,
-    coingeckoId: "tether",
-  }, // May not exist on testnet
-};
-
-// Dynamic custom/test tokens from env (for custom deployed tokens)
-function getCustomEnvTokens(): Record<string, TokenInfo> {
-  const out: Record<string, TokenInfo> = {};
-  if (
-    process.env.NEXT_PUBLIC_TOKEN_A &&
-    process.env.NEXT_PUBLIC_TOKEN_A.match(/^0x[a-fA-F0-9]{40}$/)
-  ) {
-    out.TOKEN_A = {
-      symbol: "TOKEN_A",
-      address: process.env.NEXT_PUBLIC_TOKEN_A as Address,
-      decimals: 18,
-    };
+    coingeckoId: 'tether'
   }
-  if (
-    process.env.NEXT_PUBLIC_TOKEN_B &&
-    process.env.NEXT_PUBLIC_TOKEN_B.match(/^0x[a-fA-F0-9]{40}$/)
-  ) {
-    out.TOKEN_B = {
-      symbol: "TOKEN_B",
-      address: process.env.NEXT_PUBLIC_TOKEN_B as Address,
-      decimals: 18,
-    };
-  }
-  if (
-    process.env.NEXT_PUBLIC_TOKEN_C &&
-    process.env.NEXT_PUBLIC_TOKEN_C.match(/^0x[a-fA-F0-9]{40}$/)
-  ) {
-    out.TOKEN_C = {
-      symbol: "TOKEN_C",
-      address: process.env.NEXT_PUBLIC_TOKEN_C as Address,
-      decimals: 18,
-    };
-  }
-  return out;
 }
+
+// Dynamic environment token loader (supports up to 5 custom tokens per chain)
+function getEnvTokens(prefix: string): Record<string, TokenInfo> {
+  const out: Record<string, TokenInfo> = {}
+  for (let i = 1; i <= 5; i++) {
+    const symbol = process.env[`${prefix}_SYMBOL_${i}`]
+    const address = process.env[`${prefix}_ADDRESS_${i}`]
+    const decimals = process.env[`${prefix}_DECIMALS_${i}`]
+    if (!symbol || !address || !decimals) continue
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) continue
+    const key = symbol.toUpperCase()
+    out[key] = {
+      symbol,
+      address: address as Address,
+      decimals: Number(decimals) || 18,
+      coingeckoId: process.env[`${prefix}_COINGECKO_${i}`] || undefined
+    }
+  }
+  return out
+}
+
+const DEFAULT_CHAIN_ID = Number(process.env.CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN_ID || 11142220)
 
 // Get the appropriate token registry based on chain ID
 function getTokenRegistry(chainId?: number): Record<string, TokenInfo> {
-  const id = chainId ?? Number(process.env.CHAIN_ID || 43113);
+  const target = chainId ?? Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID)
+  const runtimeEntries = runtimeTokenRegistry.get(target) ?? {}
 
-  if (id === 43114) {
-    // Avalanche mainnet
+  if (target === 42220) {
+    // Celo Mainnet
     return {
-      ...MAINNET_TOKENS,
-      ...getCustomEnvTokens(),
-    };
-  } else if (id === 11142220) {
-    // Celo Alfajores testnet
+      ...DEFAULT_MAINNET_TOKENS,
+      ...getEnvTokens('CELO_MAINNET'),
+      ...runtimeEntries
+    }
+  } else if (target === 44787) {
+    // Celo Alfajores
     return {
-      ...CELO_TOKENS,
-      ...getCustomEnvTokens(),
-    };
-  } else {
-    // Fuji testnet or unspecified
-    return {
-      ...FUJI_TOKENS,
-      ...getCustomEnvTokens(),
-    };
+      ...DEFAULT_ALFAJORES_TOKENS,
+      ...getEnvTokens('CELO_ALFAJORES'),
+      ...runtimeEntries
+    }
+  }
+
+  // Default to Sepolia for all other testnets (including 11142220)
+  return {
+    ...DEFAULT_SEPOLIA_TOKENS,
+    ...getEnvTokens('CELO_SEPOLIA'),
+    ...getEnvTokens('CELO_CUSTOM'),
+    ...runtimeEntries
   }
 }
 
-// Legacy export for backward compatibility
-export const FUJI_SYMBOL_TO_TOKEN: Record<string, TokenInfo> =
-  getTokenRegistry(43113);
-
-export function resolveTokenBySymbol(
-  symbol?: string,
-  chainId?: number
-): TokenInfo | null {
-  if (!symbol) return null;
-  const key = symbol.toUpperCase();
-  const registry = getTokenRegistry(chainId);
-  return registry[key] ?? null;
+// Resolve token by symbol (e.g., "CELO", "cUSD", "USDC")
+export function resolveTokenBySymbol(symbol?: string, chainId?: number): TokenInfo | null {
+  if (!symbol) return null
+  const registry = getTokenRegistry(chainId)
+  return registry[symbol.toUpperCase()] ?? null
 }
 
+// Resolve token by contract address
 export function resolveTokenByAddress(address?: Address | string, chainId?: number): TokenInfo | null {
   if (!address || address === 'CELO') return null
   const target = chainId ?? Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID)
@@ -234,6 +183,7 @@ export function resolveTokenByAddress(address?: Address | string, chainId?: numb
   return null
 }
 
+// Register a token at runtime (useful for dynamically added tokens)
 export function registerRuntimeToken(token: TokenInfo, chainId?: number): void {
   const target = chainId ?? Number(process.env.CHAIN_ID || DEFAULT_CHAIN_ID)
   const next = { ...(runtimeTokenRegistry.get(target) ?? {}) }
@@ -241,6 +191,15 @@ export function registerRuntimeToken(token: TokenInfo, chainId?: number): void {
   runtimeTokenRegistry.set(target, next)
 }
 
+// Placeholder for Coinranking ID resolution (not implemented)
 export function resolveTokenByCoinrankingId(): TokenInfo | null {
-  return null;
+  return null
 }
+
+// Get all tokens for a specific chain
+export function listTokenRegistry(chainId?: number): Record<string, TokenInfo> {
+  return getTokenRegistry(chainId)
+}
+
+// Legacy export for default chain
+export const CELO_SYMBOL_TO_TOKEN = getTokenRegistry(DEFAULT_CHAIN_ID)

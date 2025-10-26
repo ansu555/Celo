@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CELO to cUSD Swap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .wallet-section {
+            margin-bottom: 25px;
+        }
+
+        .wallet-status {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .wallet-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .wallet-status.disconnected {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .connect-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-metamask {
+            background: #f6851b;
+            color: white;
+        }
+
+        .btn-metamask:hover {
+            background: #e2761b;
+            transform: translateY(-2px);
+        }
+
+        .btn-valora {
+            background: #35d07f;
+            color: white;
+        }
+
+        .btn-valora:hover {
+            background: #2bb36f;
+            transform: translateY(-2px);
+        }
+
+        .swap-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .swap-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 15px;
+            font-size: 24px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            border-color: #667eea;
+        }
+
+        .token-label {
+            padding: 10px 20px;
+            background: white;
+            border-radius: 10px;
+            font-weight: 600;
+            color: #333;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .swap-icon {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .swap-icon-btn {
+            background: #667eea;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .swap-icon-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        .btn-swap {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        .btn-swap:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-swap:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .balance-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .max-btn {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            font-size: 12px;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 CELO Swap</h1>
+        <p class="subtitle">Swap CELO to cUSD on Celo Network</p>
+
+        <div class="wallet-section">
+            <div id="walletStatus" class="wallet-status disconnected">
+                <div>Wallet Not Connected</div>
+            </div>
+
+            <div class="connect-buttons">
+                <button class="btn-metamask" onclick="connectMetaMask()">
+                    🦊 MetaMask
+                </button>
+                <button class="btn-valora" onclick="connectValora()">
+                    💎 Celo Wallet
+                </button>
+            </div>
+        </div>
+
+        <div class="swap-box">
+            <div class="swap-label">From</div>
+            <div class="input-group">
+                <input type="number" id="fromAmount" placeholder="0.0" step="0.01" oninput="updateToAmount()">
+                <div class="token-label">CELO</div>
+            </div>
+            <div class="balance-info">
+                <span>Balance: <span id="celoBalance">0</span> CELO</span>
+                <button class="max-btn" onclick="setMaxAmount()">MAX</button>
+            </div>
+        </div>
+
+        <div class="swap-icon">
+            <div class="swap-icon-btn" onclick="swapTokens()">↕</div>
+        </div>
+
+        <div class="swap-box">
+            <div class="swap-label">To</div>
+            <div class="input-group">
+                <input type="number" id="toAmount" placeholder="0.0" readonly>
+                <div class="token-label">cUSD</div>
+            </div>
+            <div class="balance-info">
+                <span>Balance: <span id="cusdBalance">0</span> cUSD</span>
+            </div>
+        </div>
+
+        <button class="btn-swap" id="swapBtn" onclick="executeSwap()" disabled>
+            Connect Wallet to Swap
+        </button>
+
+        <div id="message"></div>
+
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> This swap interface connects to the Celo network. Make sure you have CELO in your wallet for gas fees. The exchange rate is approximate and will be calculated at the time of transaction.
+        </div>
+    </div>
+
+    <script>
+        let web3;
+        let userAccount;
+        let isConnected = false;
+
+        // Celo Mainnet Configuration
+        const CELO_CHAIN_ID = '0xa4ec'; // 42220 in hex
+        const CELO_RPC = 'https://forno.celo.org';
+        
+        // Celo Token Addresses (Mainnet)
+        const CELO_ADDRESS = '0x471EcE3750Da237f93B8E339c536989b8978a438'; // Wrapped CELO
+        const CUSD_ADDRESS = '0x765DE816845861e75A25fCA122bb6898B8B1282a'; // cUSD
+
+        // Simple exchange rate (in production, fetch from a DEX or oracle)
+        const EXCHANGE_RATE = 0.95; // 1 CELO = ~0.95 cUSD (example rate)
+
+        async function connectMetaMask() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    showMessage('Connecting to MetaMask...', 'info');
+                    
+                    // Request account access
+                    const accounts = await window.ethereum.request({ 
+                        method: 'eth_requestAccounts' 
+                    });
+                    
+                    userAccount = accounts[0];
+                    
+                    // Check if on Celo network, if not, switch/add it
+                    await switchToCeloNetwork();
+                    
+                    isConnected = true;
+                    updateWalletStatus();
+                    await updateBalances();
+                    
+                    showMessage('✅ MetaMask connected successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error connecting to MetaMask:', error);
+                    showMessage('❌ Failed to connect: ' + error.message, 'error');
+                }
+            } else {
+                showMessage('❌ MetaMask not found. Please install MetaMask extension.', 'error');
+                window.open('https://metamask.io/download/', '_blank');
+            }
+        }
+
+        async function connectValora() {
+            // Valora uses WalletConnect or deep linking
+            // For web, we'll try to detect if running in Valora browser
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    showMessage('Connecting to Celo Wallet...', 'info');
+                    
+                    const accounts = await window.ethereum.request({ 
+                        method: 'eth_requestAccounts' 
+                    });
+                    
+                    userAccount = accounts[0];
+                    await switchToCeloNetwork();
+                    
+                    isConnected = true;
+                    updateWalletStatus();
+                    await updateBalances();
+                    
+                    showMessage('✅ Wallet connected successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error connecting:', error);
+                    showMessage('❌ Failed to connect: ' + error.message, 'error');
+                }
+            } else {
+                showMessage('Please open this page in Valora browser or use MetaMask', 'error');
+                // Option to open in Valora via deep link
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.open(`celo://wallet/dappkit?url=${currentUrl}`, '_blank');
+            }
+        }
+
+        async function switchToCeloNetwork() {
+            try {
+                // Try to switch to Celo network
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: CELO_CHAIN_ID }],
+                });
+            } catch (switchError) {
+                // If the network hasn't been added, add it
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: CELO_CHAIN_ID,
+                                chainName: 'Celo Mainnet',
+                                nativeCurrency: {
+                                    name: 'CELO',
+                                    symbol: 'CELO',
+                                    decimals: 18
+                                },
+                                rpcUrls: [CELO_RPC],
+                                blockExplorerUrls: ['https://explorer.celo.org/']
+                            }],
+                        });
+                    } catch (addError) {
+                        throw new Error('Failed to add Celo network');
+                    }
+                } else {
+                    throw switchError;
+                }
+            }
+        }
+
+        function updateWalletStatus() {
+            const statusDiv = document.getElementById('walletStatus');
+            const swapBtn = document.getElementById('swapBtn');
+            
+            if (isConnected && userAccount) {
+                statusDiv.className = 'wallet-status connected';
+                statusDiv.innerHTML = `
+                    <div>✅ Wallet Connected</div>
+                    <div class="wallet-address">${userAccount.slice(0, 6)}...${userAccount.slice(-4)}</div>
+                `;
+                swapBtn.disabled = false;
+                swapBtn.textContent = 'Swap CELO to cUSD';
+            } else {
+                statusDiv.className = 'wallet-status disconnected';
+                statusDiv.innerHTML = '<div>Wallet Not Connected</div>';
+                swapBtn.disabled = true;
+                swapBtn.textContent = 'Connect Wallet to Swap';
+            }
+        }
+
+        async function updateBalances() {
+            if (!isConnected || !userAccount) return;
+            
+            try {
+                // Get CELO balance
+                const celoBalance = await window.ethereum.request({
+                    method: 'eth_getBalance',
+                    params: [userAccount, 'latest']
+                });
+                
+                const celoBalanceEth = parseInt(celoBalance, 16) / Math.pow(10, 18);
+                document.getElementById('celoBalance').textContent = celoBalanceEth.toFixed(4);
+                
+                // Get cUSD balance (would need to call contract)
+                // For now, showing 0 as placeholder
+                document.getElementById('cusdBalance').textContent = '0.0000';
+                
+            } catch (error) {
+                console.error('Error fetching balances:', error);
+            }
+        }
+
+        function updateToAmount() {
+            const fromAmount = parseFloat(document.getElementById('fromAmount').value) || 0;
+            const toAmount = fromAmount * EXCHANGE_RATE;
+            document.getElementById('toAmount').value = toAmount.toFixed(4);
+        }
+
+        function setMaxAmount() {
+            const maxBalance = parseFloat(document.getElementById('celoBalance').textContent);
+            // Reserve 0.01 CELO for gas
+            const maxSwap = Math.max(0, maxBalance - 0.01);
+            document.getElementById('fromAmount').value = maxSwap.toFixed(4);
+            updateToAmount();
+        }
+
+        function swapTokens() {
+            // This would swap the direction of the trade
+            showMessage('ℹ️ Reverse swap (cUSD to CELO) coming soon!', 'info');
+        }
+
+        async function executeSwap() {
+            const fromAmount = parseFloat(document.getElementById('fromAmount').value);
+            
+            if (!fromAmount || fromAmount <= 0) {
+                showMessage('❌ Please enter a valid amount', 'error');
+                return;
+            }
+            
+            const swapBtn = document.getElementById('swapBtn');
+            swapBtn.disabled = true;
+            swapBtn.innerHTML = '<span class="loading"></span> Processing...';
+            
+            try {
+                showMessage('🔄 Preparing swap transaction...', 'info');
+                
+                // Convert amount to Wei (smallest unit)
+                const amountInWei = '0x' + Math.floor(fromAmount * Math.pow(10, 18)).toString(16);
+                
+                // In production, this would interact with a DEX contract like Ubeswap
+                // For now, we'll show the transaction would be initiated
+                
+                const transactionParams = {
+                    from: userAccount,
+                    to: CUSD_ADDRESS, // In reality, this would be DEX router address
+                    value: amountInWei,
+                    data: '0x', // Would contain swap function call data
+                };
+                
+                // Request transaction
+                const txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [transactionParams],
+                });
+                
+                showMessage(`✅ Transaction submitted! Hash: ${txHash.slice(0, 10)}...`, 'success');
+                
+                // Wait for confirmation and update balances
+                setTimeout(async () => {
+                    await updateBalances();
+                    document.getElementById('fromAmount').value = '';
+                    document.getElementById('toAmount').value = '';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Swap error:', error);
+                showMessage('❌ Swap failed: ' + error.message, 'error');
+            } finally {
+                swapBtn.disabled = false;
+                swapBtn.textContent = 'Swap CELO to cUSD';
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = type === 'error' ? 'error-message' : 
+                                   type === 'success' ? 'success-message' : 'info-box';
+            messageDiv.textContent = text;
+            
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    messageDiv.textContent = '';
+                    messageDiv.className = '';
+                }, 5000);
+            }
+        }
+
+        // Listen for account changes
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length > 0) {
+                    userAccount = accounts[0];
+                    updateWalletStatus();
+                    updateBalances();
+                } else {
+                    isConnected = false;
+                    updateWalletStatus();
+                }
+            });
+
+            window.ethereum.on('chainChanged', () => {
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
