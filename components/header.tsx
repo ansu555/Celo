@@ -82,7 +82,7 @@ export function Header() {
     { name: "Explore", href: "/cryptocurrencies" },
     { name: "Trade", href: "/trade" },
     { name: "Pool", href: "/pool" },
-    { name: "Stake", href: "/stake" },
+    { name: "Mint", href: "/create-token" },
     { name: "Portfolio", href: "/agent-dashboard" },
   ];
 
