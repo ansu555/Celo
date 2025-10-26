@@ -101,9 +101,9 @@ const RouteCard: React.FC<{
     <Card 
       className={`cursor-pointer transition-all duration-200 ${
         isSelected 
-          ? 'ring-2 ring-[red-600] dark:ring-[#F3C623] bg-[red-600]/5 dark:bg-[#F3C623]/5' 
-          : 'hover:border-[red-600]/30 dark:hover:border-[#F3C623]/30'
-      } ${isBest ? 'border-[red-600]/50 dark:border-[#F3C623]/50' : ''}`}
+          ? 'ring-2 ring-[red-600] dark:ring-[#FF5CA8] bg-[red-600]/5 dark:bg-[#FF5CA8]/5' 
+          : 'hover:border-[red-600]/30 dark:hover:border-[#FF5CA8]/30'
+      } ${isBest ? 'border-[red-600]/50 dark:border-[#FF5CA8]/50' : ''}`}
       onClick={onSelect}
     >
       <CardContent className="p-4">
