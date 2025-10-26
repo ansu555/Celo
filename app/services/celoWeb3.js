@@ -79,4 +79,4 @@ export const celoWagmiConfig = createConfig(
 
 // Export chain definitions for use in components
 export { celo, celoAlfajores, celoSepolia };
-export { celo, celoAlfajores, celoSepolia };
+
