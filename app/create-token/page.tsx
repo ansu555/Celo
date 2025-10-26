@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import ERC20Abi from "./ERC20Abi.json";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface TokenLog {
   from: string;
@@ -29,6 +33,7 @@ export default function CreateTokenPage() {
   const [logs, setLogs] = useState<TokenLog[]>([]);
   const [createdTokens, setCreatedTokens] = useState<CreatedToken[]>([]);
   const [walletAddress, setWalletAddress] = useState<string>("");
+  const [open, setOpen] = useState(false);
 
   // Hardcoded example token
   const EXAMPLE_TOKEN: CreatedToken = {
@@ -44,7 +49,7 @@ export default function CreateTokenPage() {
     if (window.ethereum) {
       window.ethereum
         .request({ method: "eth_requestAccounts" })
-        .then((accounts) => {
+  .then((accounts: string[]) => {
           if (accounts.length > 0) {
             setWalletAddress(accounts[0]);
             fetchCreatedTokens(accounts[0]);
@@ -134,6 +139,9 @@ export default function CreateTokenPage() {
           totalSupply: initialSupply,
         },
       ]);
+
+      // Close the modal after successful deployment
+      setOpen(false);
 
       // Fetch logs for the newly created token
       fetchTokenLogs(deployedAddress, walletAddress).then(setLogs);
@@ -227,157 +235,112 @@ export default function CreateTokenPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-white rounded-lg shadow-md mt-10">
-      <h1 className="text-2xl font-bold mb-6">Create Your ERC20 Token</h1>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header + actions */}
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Mint</h1>
+          <p className="text-sm text-white/70 dark:text-white/60">Create and launch your ERC20 token on Celo Sepolia.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-[32px] bg-white/10 text-white border border-white/15 backdrop-blur-lg hover:bg-white/15">Launch your token</Button>
+            </DialogTrigger>
+            <DialogContent className="border border-white/10 bg-white/10 backdrop-blur-xl text-white">
+              <DialogHeader>
+                <DialogTitle>Launch your token</DialogTitle>
+                <DialogDescription className="text-white/70">Fill the details below and deploy in one click.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="token-name" className="text-white/90">Token Name</Label>
+                  <Input id="token-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Aksha" className="bg-white/5 border-white/15 text-white placeholder:text-white/50" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="token-symbol" className="text-white/90">Token Symbol</Label>
+                  <Input id="token-symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="e.g., AKS" className="bg-white/5 border-white/15 text-white placeholder:text-white/50" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="initial-supply" className="text-white/90">Initial Supply</Label>
+                  <Input id="initial-supply" type="number" value={initialSupply} onChange={(e) => setInitialSupply(e.target.value)} placeholder="e.g., 1000000" className="bg-white/5 border-white/15 text-white placeholder:text-white/50" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCreateToken} className="rounded-[28px] bg-white/15 text-white border border-white/20 backdrop-blur hover:bg-white/25">Deploy Token</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button variant="ghost" className="rounded-[28px] bg-white/5 text-white border border-white/10 backdrop-blur hover:bg-white/10" onClick={() => setOpen(true)}>
+            Deploy token
+          </Button>
+        </div>
+      </div>
 
-      <label className="block mb-2">
-        Token Name
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-2 border rounded mt-1"
-          placeholder="e.g., aksha"
-        />
-      </label>
-
-      <label className="block mb-2">
-        Token Symbol
-        <input
-          type="text"
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value)}
-          className="w-full p-2 border rounded mt-1"
-          placeholder="e.g., AKS"
-        />
-      </label>
-
-      <label className="block mb-4">
-        Initial Supply
-        <input
-          type="number"
-          value={initialSupply}
-          onChange={(e) => setInitialSupply(e.target.value)}
-          className="w-full p-2 border rounded mt-1"
-          placeholder="e.g., 10000000000000000000000"
-        />
-      </label>
-
-      <button
-        onClick={handleCreateToken}
-        className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700"
-      >
-        Deploy Token
-      </button>
-
-      {status && <p className="mt-4">{status}</p>}
-
-      {txHash && (
-        <p className="mt-2">
-          Transaction Hash:{" "}
-          <a
-            href={`https://celo-sepolia.blockscout.com/tx/${txHash}?tab=token_transfers`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            {txHash}
-          </a>
-        </p>
+      {(status || txHash || tokenAddress) && (
+        <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/90 backdrop-blur">
+          {status && <div className="mb-1">{status}</div>}
+          {txHash && (
+            <div className="truncate">
+              Tx: <a className="underline" href={`https://celo-sepolia.blockscout.com/tx/${txHash}?tab=token_transfers`} target="_blank" rel="noreferrer">{txHash}</a>
+            </div>
+          )}
+          {tokenAddress && (
+            <div className="truncate">
+              Address: <a className="underline" href={`https://celo-sepolia.blockscout.com/address/${tokenAddress}`} target="_blank" rel="noreferrer">{tokenAddress}</a>
+            </div>
+          )}
+        </div>
       )}
 
-      {tokenAddress && (
-        <p className="mt-2">
-          Token Address:{" "}
-          <a
-            href={`https://celo-sepolia.blockscout.com/address/${tokenAddress}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            {tokenAddress}
-          </a>
-        </p>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Your Tokens</h2>
+        <span className="text-xs text-white/60">{createdTokens.length} total</span>
+      </div>
+      {createdTokens.length === 0 && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/80 backdrop-blur">No tokens deployed yet.</div>
       )}
-
-      <hr className="my-6" />
-
-      <h2 className="text-xl font-semibold mb-4">Your Created Tokens</h2>
-      {createdTokens.length === 0 && <p>No tokens deployed yet.</p>}
-      {createdTokens.map((t, i) => (
-        <div key={i} className="mb-3 p-4 border rounded bg-gray-50">
-          <p className="font-semibold text-lg mb-2">
-            {t.name} ({t.symbol})
-          </p>
-          <p className="text-sm mb-1">
-            <strong>Address:</strong>{" "}
-            <a
-              href={`https://celo-sepolia.blockscout.com/token/${t.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline break-all"
-            >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {createdTokens.map((t, i) => (
+          <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-base font-semibold text-white">{t.name}</div>
+              {t.symbol && <span className="text-xs text-white/60">{t.symbol}</span>}
+            </div>
+            <div className="text-xs text-white/60">Address</div>
+            <a href={`https://celo-sepolia.blockscout.com/token/${t.address}`} target="_blank" rel="noreferrer" className="truncate text-sm underline text-white/90">
               {t.address}
             </a>
-          </p>
-          {t.totalSupply && (
-            <p className="text-sm mb-1">
-              <strong>Max Total Supply:</strong> {t.totalSupply}
-            </p>
-          )}
-          {t.txHash && t.txHash !== "0x..." && (
-            <p className="text-sm">
-              <strong>Tx Hash:</strong>{" "}
-              <a
-                href={`https://celo-sepolia.blockscout.com/tx/${t.txHash}?tab=token_transfers`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline break-all"
-              >
-                {t.txHash}
-              </a>
-            </p>
-          )}
-          <button
-            onClick={() =>
-              fetchTokenLogs(t.address, walletAddress).then(setLogs)
-            }
-            className="mt-2 px-4 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-          >
-            View Transfer Logs
-          </button>
-        </div>
-      ))}
+            {t.totalSupply && (
+              <div className="mt-2 text-xs text-white/60">Supply: <span className="text-white/80">{t.totalSupply}</span></div>
+            )}
+            {t.txHash && t.txHash !== "0x..." && (
+              <div className="mt-2 truncate text-xs text-white/60">Tx: <a className="underline" href={`https://celo-sepolia.blockscout.com/tx/${t.txHash}?tab=token_transfers`} target="_blank" rel="noreferrer">{t.txHash}</a></div>
+            )}
+            <div className="mt-3">
+              <button onClick={() => fetchTokenLogs(t.address, walletAddress).then(setLogs)} className="h-8 rounded-[20px] border border-white/15 bg-white/10 px-3 text-sm text-white hover:bg-white/15">View transfers</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <hr className="my-6" />
-      <h2 className="text-xl font-semibold mb-4">Token Transfer Logs</h2>
-      {logs.length === 0 && (
-        <p>No transfers found. Click "View Transfer Logs" on a token above.</p>
-      )}
-      {logs.map((log, i) => (
-        <div key={i} className="mb-2 p-3 border rounded bg-gray-50">
-          <p className="text-sm">
-            <strong>From:</strong> <span className="break-all">{log.from}</span>
-          </p>
-          <p className="text-sm">
-            <strong>To:</strong> <span className="break-all">{log.to}</span>
-          </p>
-          <p className="text-sm">
-            <strong>Amount:</strong> {log.value} tokens
-          </p>
-          <p className="text-sm">
-            <strong>Tx:</strong>{" "}
-            <a
-              href={`https://celo-sepolia.blockscout.com/tx/${log.txHash}?tab=token_transfers`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline break-all"
-            >
-              {log.txHash}
-            </a>
-          </p>
-        </div>
-      ))}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-3">Token Transfer Logs</h2>
+        {logs.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/80 backdrop-blur">No transfers found. Click "View transfers" on a token above.</div>
+        ) : (
+          <div className="space-y-3">
+            {logs.map((log, i) => (
+              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/90 backdrop-blur">
+                <div className="truncate"><span className="text-white/60">From:</span> {log.from}</div>
+                <div className="truncate"><span className="text-white/60">To:</span> {log.to}</div>
+                <div><span className="text-white/60">Amount:</span> {log.value}</div>
+                <div className="truncate"><span className="text-white/60">Tx:</span> <a className="underline" href={`https://celo-sepolia.blockscout.com/tx/${log.txHash}?tab=token_transfers`} target="_blank" rel="noreferrer">{log.txHash}</a></div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
