@@ -58,7 +58,7 @@ export default function CeloOnlyPage() {
               <p className="font-medium">⚠️ Unsupported Network</p>
               <p className="text-sm">
                 You are connected to {chain?.name} (Chain ID: {chain?.id}). 
-                This application only supports Celo networks. Please switch to Celo Mainnet or Alfajores testnet.
+                This application only supports Celo networks. Please switch to Celo Mainnet, Sepolia, or Alfajores testnet.
               </p>
             </div>
           </AlertDescription>
@@ -75,7 +75,7 @@ export default function CeloOnlyPage() {
                 Wallet Information
                 {isCeloChain && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {isCeloMainnet ? 'Celo Mainnet' : 'Celo Alfajores'}
+                    {celoNetworkInfo?.name}
                   </Badge>
                 )}
               </CardTitle>
@@ -107,7 +107,7 @@ export default function CeloOnlyPage() {
               {!isCeloChain && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-800">
-                    ❌ Not connected to Celo network. Please switch to Celo Mainnet or Alfajores.
+                    ❌ Not connected to Celo network. Please switch to Celo Mainnet, Sepolia, or Alfajores.
                   </p>
                 </div>
               )}
@@ -121,8 +121,8 @@ export default function CeloOnlyPage() {
               )}
             </CardContent>
           </Card>
-        </>
-      )}
+        )}
+      </div>
 
       {isConnected && isCeloChain && (
         <>
@@ -237,6 +237,7 @@ export default function CeloOnlyPage() {
             </div>
           </CardContent>
         </Card>
+        </>
       )}
 
       <Card>

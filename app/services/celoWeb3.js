@@ -41,15 +41,36 @@ const celoAlfajores = {
   testnet: true,
 };
 
+// Celo Sepolia (new testnet)
+const celoSepolia = {
+  id: 11142220,
+  name: 'Celo Sepolia',
+  network: 'celo-sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Celo',
+    symbol: 'CELO',
+  },
+  rpcUrls: {
+    default: { http: ['https://forno.celo-sepolia.celo-testnet.org'] },
+    public: { http: ['https://forno.celo-sepolia.celo-testnet.org'] },
+  },
+  blockExplorers: {
+    default: { name: 'CeloScan', url: 'https://celo-sepolia.celoscan.io' },
+  },
+  testnet: true,
+};
+
 // Celo-only wagmi configuration
 export const celoWagmiConfig = createConfig(
   getDefaultConfig({
     appName: '10xSwap - Celo',
     // Only Celo chains
-    chains: [celo, celoAlfajores],
+    chains: [celo, celoAlfajores, celoSepolia],
     transports: {
       [celo.id]: http(),
       [celoAlfajores.id]: http(),
+      [celoSepolia.id]: http(),
     },
     autoConnect: false,
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
@@ -57,4 +78,4 @@ export const celoWagmiConfig = createConfig(
 );
 
 // Export chain definitions for use in components
-export { celo, celoAlfajores };
+export { celo, celoAlfajores, celoSepolia };

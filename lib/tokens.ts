@@ -59,8 +59,20 @@ const DEFAULT_SEPOLIA_TOKENS: Record<string, TokenInfo> = {
     address: (process.env.CELO_CEUR_ADDRESS_SEPOLIA || '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F') as Address,
     decimals: 18,
     coingeckoId: 'celo-euro'
+  },
+  TKA: {
+    symbol: 'TKA',
+    address: (process.env.NEXT_PUBLIC_TEST_TOKEN_A || '0x12846d5C14622d085B0bbD9033e87d08C59a67d1') as Address,
+    decimals: 18
+  },
+  TKB: {
+    symbol: 'TKB',
+    address: (process.env.NEXT_PUBLIC_TEST_TOKEN_B || '0x...') as Address,
+    decimals: 18
   }
 }
+// Funded test pair for frontend
+export const FUNDED_TEST_PAIR = process.env.NEXT_PUBLIC_TEST_PAIR || '0x...';
 
 function getEnvTokens(prefix: string): Record<string, TokenInfo> {
   const out: Record<string, TokenInfo> = {}
