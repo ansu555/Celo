@@ -1,0 +1,35 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-877415b3ec2a160fbe4c6f7b07dd4d889ebbdc67",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/SimpleSwap.sol": "project/contracts/SimpleSwap.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/SimpleSwap.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ninterface IERC20 {\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\n    function approve(address spender, uint256 amount) external returns (bool);\n}\n\ninterface IUniswapV2Pair {\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\n    function token0() external view returns (address);\n    function token1() external view returns (address);\n    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;\n}\n\ninterface IUniswapV2Factory {\n    function getPair(address tokenA, address tokenB) external view returns (address pair);\n}\n\n/**\n * @title SimpleSwap\n * @notice Minimal swap contract for Uniswap V2-style pairs on Celo Sepolia\n * @dev Performs direct swaps using existing liquidity pools\n */\ncontract SimpleSwap {\n    address public immutable factory;\n    address public immutable WETH;\n    \n    event Swap(\n        address indexed user,\n        address indexed tokenIn,\n        address indexed tokenOut,\n        uint256 amountIn,\n        uint256 amountOut\n    );\n\n    constructor(address _factory, address _weth) {\n        require(_factory != address(0), \"Invalid factory\");\n        require(_weth != address(0), \"Invalid WETH\");\n        factory = _factory;\n        WETH = _weth;\n    }\n\n    /**\n     * @notice Swap exact tokens for tokens\n     * @param tokenIn Input token address\n     * @param tokenOut Output token address\n     * @param amountIn Amount of input tokens\n     * @param minAmountOut Minimum amount of output tokens (slippage protection)\n     * @param to Recipient address\n     * @return amountOut Actual amount of output tokens received\n     */\n    function swapExactTokensForTokens(\n        address tokenIn,\n        address tokenOut,\n        uint256 amountIn,\n        uint256 minAmountOut,\n        address to\n    ) external returns (uint256 amountOut) {\n        require(tokenIn != tokenOut, \"Same token\");\n        require(amountIn > 0, \"Zero amount\");\n        require(to != address(0), \"Invalid recipient\");\n\n        // Get pair\n        address pair = IUniswapV2Factory(factory).getPair(tokenIn, tokenOut);\n        require(pair != address(0), \"Pair not found\");\n\n        // Transfer input tokens from sender to pair\n        require(\n            IERC20(tokenIn).transferFrom(msg.sender, pair, amountIn),\n            \"Transfer failed\"\n        );\n\n        // Calculate output amount\n        amountOut = _getAmountOut(amountIn, tokenIn, tokenOut, pair);\n        require(amountOut >= minAmountOut, \"Slippage too high\");\n\n        // Perform swap\n        _swap(tokenIn, tokenOut, amountOut, pair, to);\n\n        emit Swap(msg.sender, tokenIn, tokenOut, amountIn, amountOut);\n    }\n\n    /**\n     * @notice Calculate output amount for a given input using x*y=k formula\n     */\n    function _getAmountOut(\n        uint256 amountIn,\n        address tokenIn,\n        address tokenOut,\n        address pair\n    ) internal view returns (uint256 amountOut) {\n        (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pair).getReserves();\n        \n        address token0 = IUniswapV2Pair(pair).token0();\n        \n        (uint256 reserveIn, uint256 reserveOut) = tokenIn == token0 \n            ? (uint256(reserve0), uint256(reserve1))\n            : (uint256(reserve1), uint256(reserve0));\n\n        require(reserveIn > 0 && reserveOut > 0, \"Insufficient liquidity\");\n\n        // Apply 0.3% fee (997/1000)\n        uint256 amountInWithFee = amountIn * 997;\n        uint256 numerator = amountInWithFee * reserveOut;\n        uint256 denominator = (reserveIn * 1000) + amountInWithFee;\n        \n        amountOut = numerator / denominator;\n    }\n\n    /**\n     * @notice Execute the swap on the pair\n     */\n    function _swap(\n        address tokenIn,\n        address tokenOut,\n        uint256 amountOut,\n        address pair,\n        address to\n    ) internal {\n        address token0 = IUniswapV2Pair(pair).token0();\n        \n        (uint256 amount0Out, uint256 amount1Out) = tokenIn == token0\n            ? (uint256(0), amountOut)\n            : (amountOut, uint256(0));\n\n        IUniswapV2Pair(pair).swap(amount0Out, amount1Out, to, new bytes(0));\n    }\n\n    /**\n     * @notice Get quote for a swap (preview)\n     * @param tokenIn Input token\n     * @param tokenOut Output token\n     * @param amountIn Amount of input tokens\n     * @return amountOut Expected output amount\n     */\n    function getAmountOut(\n        address tokenIn,\n        address tokenOut,\n        uint256 amountIn\n    ) external view returns (uint256 amountOut) {\n        address pair = IUniswapV2Factory(factory).getPair(tokenIn, tokenOut);\n        require(pair != address(0), \"Pair not found\");\n        \n        return _getAmountOut(amountIn, tokenIn, tokenOut, pair);\n    }\n\n    /**\n     * @notice Check if a pair exists\n     */\n    function pairExists(address tokenA, address tokenB) external view returns (bool) {\n        address pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);\n        return pair != address(0);\n    }\n\n    /**\n     * @notice Get pair address\n     */\n    function getPair(address tokenA, address tokenB) external view returns (address) {\n        return IUniswapV2Factory(factory).getPair(tokenA, tokenB);\n    }\n}\n"
+      }
+    }
+  }
+}

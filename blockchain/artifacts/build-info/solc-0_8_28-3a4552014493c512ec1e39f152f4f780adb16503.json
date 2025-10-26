@@ -1,0 +1,35 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-3a4552014493c512ec1e39f152f4f780adb16503",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/MultiRouteSwapper.sol": "project/contracts/MultiRouteSwapper.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/MultiRouteSwapper.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ninterface IERC20Minimal {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address to, uint256 value) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 value) external returns (bool);\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\n}\n\ninterface IUniswapV2Router02 {\n    function swapExactTokensForTokens(\n        uint256 amountIn,\n        uint256 amountOutMin,\n        address[] calldata path,\n        address to,\n        uint256 deadline\n    ) external returns (uint256[] memory amounts);\n}\n\ncontract MultiRouteSwapper {\n    struct RouteHop {\n        address router;\n        address[] path;\n    }\n\n    uint256 private constant ALLOWANCE_BUFFER = type(uint256).max;\n    uint256 private unlocked = 1;\n\n    event MultiRouteSwap(\n        address indexed user,\n        address indexed tokenIn,\n        address indexed tokenOut,\n        uint256 amountIn,\n        uint256 amountOut\n    );\n\n    modifier nonReentrant() {\n        require(unlocked == 1, \"LOCKED\");\n        unlocked = 2;\n        _;\n        unlocked = 1;\n    }\n\n    function swapExactTokensForTokens(\n        RouteHop[] calldata hops,\n        uint256 amountIn,\n        uint256 minAmountOut,\n        address recipient,\n        uint256 deadline\n    ) external nonReentrant returns (uint256 amountOut) {\n        require(hops.length > 0, \"NO_HOPS\");\n        require(recipient != address(0), \"BAD_RECIPIENT\");\n        require(deadline >= block.timestamp, \"DEADLINE_PASSED\");\n\n        address inputToken = hops[0].path[0];\n        address outputToken = hops[hops.length - 1].path[hops[hops.length - 1].path.length - 1];\n        require(inputToken != address(0) && outputToken != address(0), \"BAD_PATH\");\n\n        _pullToken(inputToken, amountIn);\n\n        uint256 runningAmount = amountIn;\n\n        for (uint256 i = 0; i < hops.length; i++) {\n            RouteHop calldata hop = hops[i];\n            require(hop.router != address(0), \"BAD_ROUTER\");\n            require(hop.path.length >= 2, \"SHORT_PATH\");\n            require(hop.path[0] != address(0), \"BAD_INPUT\");\n\n            _approveIfNeeded(hop.path[0], hop.router, runningAmount);\n\n            uint256 amountOutMinStep = i == hops.length - 1 ? minAmountOut : 0;\n            uint256[] memory amounts = IUniswapV2Router02(hop.router).swapExactTokensForTokens(\n                runningAmount,\n                amountOutMinStep,\n                hop.path,\n                address(this),\n                deadline\n            );\n\n            runningAmount = amounts[amounts.length - 1];\n        }\n\n        require(runningAmount >= minAmountOut, \"INSUFFICIENT_OUTPUT\");\n\n        _pushToken(outputToken, recipient, runningAmount);\n\n        emit MultiRouteSwap(msg.sender, inputToken, outputToken, amountIn, runningAmount);\n        return runningAmount;\n    }\n\n    function _pullToken(address token, uint256 amount) private {\n        require(IERC20Minimal(token).transferFrom(msg.sender, address(this), amount), \"TRANSFER_IN_FAIL\");\n    }\n\n    function _pushToken(address token, address to, uint256 amount) private {\n        require(IERC20Minimal(token).transfer(to, amount), \"TRANSFER_OUT_FAIL\");\n    }\n\n    function _approveIfNeeded(address token, address spender, uint256 amount) private {\n        IERC20Minimal erc = IERC20Minimal(token);\n        uint256 allowance = erc.allowance(address(this), spender);\n        if (allowance < amount) {\n            if (allowance > 0) {\n                require(erc.approve(spender, 0), \"APPROVE_RESET_FAIL\");\n            }\n            require(erc.approve(spender, ALLOWANCE_BUFFER), \"APPROVE_FAIL\");\n        }\n    }\n}\n"
+      }
+    }
+  }
+}

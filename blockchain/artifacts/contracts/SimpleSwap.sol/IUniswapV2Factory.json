@@ -1,0 +1,38 @@
+{
+  "_format": "hh3-artifact-1",
+  "contractName": "IUniswapV2Factory",
+  "sourceName": "contracts/SimpleSwap.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenA",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenB",
+          "type": "address"
+        }
+      ],
+      "name": "getPair",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "pair",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "immutableReferences": {},
+  "inputSourceName": "project/contracts/SimpleSwap.sol",
+  "buildInfoId": "solc-0_8_28-877415b3ec2a160fbe4c6f7b07dd4d889ebbdc67"
+}
