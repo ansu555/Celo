@@ -105,16 +105,16 @@ export default function ChatBubble({
 
   const typing = loading;
 
-  const chainLabel = "Algorand Testnet";
-  const explorerBase = "https://testnet.algoexplorer.io";
-  const nativeSymbol = "ALGO";
+  const chainLabel = "Celo Testnet";
+  const explorerBase = "https://celo-sepolia.blockscout.com";
+  const nativeSymbol = "CELO";
 
   const renderImage = (url: string, alt: string, key: string) => (
     <button
       key={key}
       type="button"
       onClick={() => setActiveImage({ src: url, alt })}
-      className="group mt-2 block overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm transition hover:border-red-400/60 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 dark:border-white/10 dark:bg-white/5 dark:hover:border-[#F3C623]/60"
+      className="group mt-2 block overflow-hidden rounded-xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 shadow-sm transition hover:border-red-400/60 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 dark:border-white/10 backdrop-blur-xl"
     >
       <img
         src={url}
@@ -154,7 +154,7 @@ export default function ChatBubble({
             href={fullUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-red-500 underline underline-offset-2 transition hover:text-red-600 dark:text-[#F3C623] dark:hover:text-[#F3C623]/90"
+            className="text-red-500 underline underline-offset-2 transition hover:text-red-600 dark:text-red-600 dark:hover:text-red-700"
           >
             {fullUrl}
           </a>
@@ -192,7 +192,7 @@ export default function ChatBubble({
           href={`${explorerBase}/address/${address}`}
           target="_blank"
           rel="noreferrer"
-          className="text-red-500 underline underline-offset-2 transition hover:text-red-600 dark:text-[#F3C623] dark:hover:text-[#F3C623]/90"
+          className="text-red-500 underline underline-offset-2 transition hover:text-red-600 dark:text-red-600 dark:hover:text-red-700"
         >
           {address}
         </a>
@@ -278,7 +278,7 @@ export default function ChatBubble({
       : "relative ml-auto"
     : undefined;
   const buttonClass = isFooter
-    ? "relative z-[140] grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl shadow-red-500/20 focus:outline-none dark:from-[#F3C623] dark:to-[#D9A800] dark:shadow-[#F3C623]/20"
+    ? "relative z-[140] grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl shadow-red-500/20 focus:outline-none dark:from-red-600 dark:to-red-700 dark:shadow-red-600/20"
     : "fixed bottom-6 right-6 z-[140] grid h-14 w-14 place-items-center rounded-full bg-white/80 text-slate-900 shadow-xl shadow-slate-900/15 ring-1 ring-white/60 backdrop-blur-2xl transition-all hover:-translate-y-1 hover:shadow-2xl hover:ring-white/80 dark:bg-[#1c1c1c]/80 dark:text-white dark:shadow-black/40 dark:ring-white/10";
   const panelClass = isFooter
     ? align === "left"
@@ -391,12 +391,12 @@ export default function ChatBubble({
             <div className="flex items-center justify-between gap-3 border-b border-slate-200/60 px-4 py-3 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <div className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
-                  <Bot className="h-4 w-4 text-red-400 dark:text-[#F3C623]" />
+                  <Bot className="h-4 w-4 text-red-600 dark:text-red-600" />
                 </div>
                 <div className="text-sm font-semibold">10xSwap AI Agent</div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:inline">
+                <span className="hidden rounded-full border border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl px-2.5 py-1 text-[10px] font-medium text-slate-700 dark:border-white/10 dark:text-slate-300 sm:inline">
                   {chainLabel}
                 </span>
                 <button
@@ -415,7 +415,7 @@ export default function ChatBubble({
                   <button
                     key={x.label}
                     onClick={() => usePreset(x.prompt)}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:border-red-400/40 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:border-[#F3C623]/50"
+                    className="rounded-full border border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl px-3 py-1 text-xs text-slate-700 hover:border-red-400/40 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:border-red-600/50"
                   >
                     {x.label}
                   </button>
@@ -438,9 +438,9 @@ export default function ChatBubble({
                   </button>
                 </div>
                 {showRules && (
-                  <div className="relative rounded-lg border border-red-300/30 bg-red-50/80 p-2 dark:border-[#F3C623]/30 dark:bg-[#F3C623]/10">
+                  <div className="relative rounded-lg border border-red-300/30 bg-red-50/80 p-2 dark:border-red-600/30 dark:bg-red-600/10">
                     <div
-                      className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-red-400/60 dark:bg-[#F3C623]/60"
+                      className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-red-400/60 dark:bg-red-600/60"
                       aria-hidden
                     />
                     <div className="grid max-h-48 gap-2 overflow-y-auto pr-2 pl-2">
@@ -449,21 +449,21 @@ export default function ChatBubble({
                           Supported actions
                         </div>
                         <ul className="list-disc space-y-1 pl-5">
-                          <li>address — your Algorand account address</li>
+                          <li>address — your Celo account address</li>
                           <li>
                             balance — e.g. get my balances | get my USDC balance
-                            | balance ASA_ID
+                            | balance TOKEN_ADDRESS
                           </li>
                           <li>
-                            price — e.g. ALGO/BTC/SOL or names like "solana"
+                            price — e.g. CELO/BTC/SOL or names like "solana"
                           </li>
                           <li>
-                            gas price — current transaction fees on Algorand
+                            gas price — current transaction fees on Celo
                           </li>
                           <li>swap — e.g. swap 5 USDC to {nativeSymbol}</li>
                           <li>
-                            transfer — e.g. transfer 0.01 ALGO to AAAAA...
-                            (valid Algorand address required)
+                            transfer — e.g. transfer 0.01 CELO to 0xAAAAA...
+                            (valid Celo address required)
                           </li>
                         </ul>
                       </div>
@@ -472,9 +472,9 @@ export default function ChatBubble({
                           Tips
                         </div>
                         <ul className="list-disc space-y-1 pl-5">
-                          <li>Prefer token symbols (ALGO, USDC, USDT, DAI).</li>
+                          <li>Prefer token symbols (CELO, USDC, USDT, DAI).</li>
                           <li>Keep queries short and specific.</li>
-                          <li>For unknown tokens, use the ASA ID number.</li>
+                          <li>For unknown tokens, use the token contract address.</li>
                         </ul>
                       </div>
                       <div>
@@ -483,15 +483,15 @@ export default function ChatBubble({
                         </div>
                         <ul className="list-disc space-y-1 pl-5">
                           <li>
-                            Transfers require a valid Algorand address (58
-                            characters).
+                            Transfers require a valid Celo address (42
+                            characters, starting with 0x).
                           </li>
                           <li>Runs on {chainLabel}.</li>
                           <li>
                             Balances are shown to 4 decimals; small USD values
                             may round to $0.01.
                           </li>
-                          <li>Powered by Algorand blockchain integration.</li>
+                          <li>Powered by Celo blockchain integration.</li>
                           <li>Never share secrets or private keys.</li>
                         </ul>
                       </div>
@@ -504,10 +504,10 @@ export default function ChatBubble({
             {/* Messages */}
             <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
               {messages.length === 0 && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                <div className="rounded-xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl p-3 text-sm text-slate-700 dark:border-white/10 dark:text-slate-300">
                   Ask things like: "what's my address?", "check my USDC
                   balance", "price of solana", "gas price", "swap 5 USDC to
-                  ALGO".
+                  CELO".
                 </div>
               )}
               {messages.map((m, i) => (
@@ -520,13 +520,13 @@ export default function ChatBubble({
                   <div className="flex max-w-[85%] items-start gap-2">
                     {m.role === "assistant" && (
                       <div className="mt-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 sm:grid">
-                        <Bot className="h-3.5 w-3.5 text-red-400 dark:text-[#F3C623]" />
+                        <Bot className="h-3.5 w-3.5 text-red-600 dark:text-red-600" />
                       </div>
                     )}
                     <div
                       className={
                         m.role === "user"
-                          ? "max-w-full rounded-2xl bg-gradient-to-br from-red-500 to-red-600 px-3 py-2 text-sm text-white shadow-md dark:from-[#F3C623] dark:to-[#D9A800]"
+                          ? "max-w-full rounded-2xl bg-gradient-to-br from-red-500 to-red-600 px-3 py-2 text-sm text-white shadow-md dark:from-red-600 dark:to-red-700"
                           : "max-w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
                       }
                     >
@@ -551,7 +551,7 @@ export default function ChatBubble({
 
             {/* Input */}
             <div className="border-t border-slate-200/60 p-3 dark:border-white/10">
-              <div className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-inner focus-within:border-red-400/40 dark:border-white/10 dark:bg-white/5 dark:focus-within:border-[#F3C623]/50">
+              <div className="group flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl px-2.5 py-2 shadow-inner focus-within:border-red-400/40 dark:border-white/10 dark:focus-within:border-red-600/50">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -569,7 +569,7 @@ export default function ChatBubble({
                   disabled={loading}
                   whileHover={{ scale: loading ? 1 : 1.05 }}
                   whileTap={{ scale: loading ? 1 : 0.95 }}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow shadow-red-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:from-[#F3C623] dark:to-[#D9A800] dark:shadow-[#F3C623]/20"
+                  className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow shadow-red-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:from-red-600 dark:to-red-700 dark:shadow-red-600/20"
                 >
                   {loading ? (
                     <svg
