@@ -261,14 +261,14 @@ export function CryptoDetail({ id }: { id: string }) {
         <Card className="flex flex-col justify-center">
           <CardContent className="pt-6">
             <Button 
-              className="w-full group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#F3C623]/25"
+              className="w-full group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25 dark:hover:shadow-[#FF5CA8]/25"
               size="lg"
               onClick={() => setRbOpen(true)}
             >
               <span className="relative z-10 transition-colors duration-300 group-hover:text-white dark:group-hover:text-black">
                 Add to Auto-Pilot
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#F3C623] dark:to-[#F3C623]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 dark:from-[#FF5CA8] dark:to-[#C43E82]/80 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">
               Automate your investment strategy

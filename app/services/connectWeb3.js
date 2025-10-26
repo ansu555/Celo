@@ -44,9 +44,9 @@ const celoAlfajores = {
 
 export const wagmiConfig = createConfig(
   getDefaultConfig({
-    appName: '10xSwap',
-    // Enable Avalanche and Celo chains
-    chains: [avalanche, avalancheFuji, celo, celoAlfajores],
+  appName: 'Accorto',
+  // Enable Avalanche mainnet and Avalanche Fuji (testnet) only
+  chains: [avalanche, avalancheFuji],
     transports: {
       [avalanche.id]: http(),
       [avalancheFuji.id]: http(),

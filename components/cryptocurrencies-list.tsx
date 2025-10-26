@@ -291,7 +291,7 @@ export function CryptocurrenciesList() {
         <LoadingSkeleton />
       ) : (
         <>
-          <div className="rounded-md border overflow-hidden">
+      <div className="rounded-md border overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
               <TableHeader>
@@ -401,19 +401,19 @@ export function CryptocurrenciesList() {
               <TableBody>
                 {paginatedCryptos.length > 0 ? (
                   paginatedCryptos.map((crypto) => (
-                    <TableRow key={crypto.id} className="hover:bg-muted/50 dark:hover:bg-[#F3C623]/10">
+                    <TableRow key={crypto.id} className="hover:bg-muted/50 dark:hover:bg-[#FF5CA8]/10">
                       <TableCell className="font-medium">{crypto.rank}</TableCell>
                       <TableCell>
                         <Link
                           href={`/cryptocurrencies/${crypto.id}`}
-                          className="flex items-center hover:text-primary dark:hover:text-[#F3C623] transition-colors"
+                            className="flex items-center hover:text-primary dark:hover:text-[#FF5CA8] transition-colors"
                         >
-                          <div className="w-8 h-8 bg-[red-600]/10 dark:bg-[#F3C623]/10 rounded-full mr-3 flex items-center justify-center text-xs font-mono text-[red-600] dark:text-[#F3C623]">
+                          <div className="w-8 h-8 bg-[red-600]/10 dark:bg-[#FF5CA8]/10 rounded-full mr-3 flex items-center justify-center text-xs font-mono text-[red-600] dark:text-[#FF5CA8]">
   {crypto.symbol.substring(0, 3)}
 </div>
                           <div>
                             <div className="font-medium">{crypto.name}</div>
-                            <div className="text-xs text-muted-foreground dark:text-[#F3C623]/60">{crypto.symbol}</div>
+                            <div className="text-xs text-muted-foreground dark:text-[#FF5CA8]/60">{crypto.symbol}</div>
                           </div>
                         </Link>
                       </TableCell>
@@ -423,7 +423,7 @@ export function CryptocurrenciesList() {
                       <TableCell className={cn(
   "text-right", 
   crypto.change1h >= 0 
-    ? "text-green-500 dark:text-[#F3C623]" 
+    ? "text-green-500 dark:text-[#FF5CA8]" 
     : "text-red-500"
 )}>
 
@@ -439,7 +439,7 @@ export function CryptocurrenciesList() {
                       <TableCell className={cn(
   "text-right", 
   crypto.change24h >= 0 
-    ? "text-green-500 dark:text-[#F3C623]" 
+    ? "text-green-500 dark:text-[#FF5CA8]" 
     : "text-red-500"
 )}>
 
@@ -455,7 +455,7 @@ export function CryptocurrenciesList() {
                       <TableCell className={cn(
   "text-right hidden md:table-cell",
   crypto.change7d >= 0 
-    ? "text-green-500 dark:text-[#F3C623]" 
+    ? "text-green-500 dark:text-[#FF5CA8]" 
     : "text-red-500"
 )}>
 

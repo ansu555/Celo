@@ -136,68 +136,27 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
     const nodes: React.ReactNode[] = []
     const addressRegex = /([A-Z2-7]{58})/g
     let lastIndex = 0
-    let match: RegExpExecArray | null
-
-    while ((match = addressRegex.exec(segment)) !== null) {
-      const [address] = match
-      if (match.index > lastIndex) {
-        nodes.push(...renderTextWithUrls(segment.slice(lastIndex, match.index), `${keyPrefix}-txt-${match.index}`))
+    let m: RegExpExecArray | null
+    while ((m = re.exec(text)) !== null) {
+      const [match, tx, addr] = m
+      if (m.index > lastIndex) out.push(text.slice(lastIndex, m.index))
+      if (tx) {
+        out.push(
+          <a key={`${m.index}-tx`} href={`${explorerBase}/tx/${tx}`} target="_blank" rel="noreferrer" className="text-red-600 underline underline-offset-2 dark:text-[#FF5CA8]">
+            {tx}
+          </a>
+        )
+      } else if (addr) {
+        out.push(
+          <a key={`${m.index}-addr`} href={`${explorerBase}/address/${addr}`} target="_blank" rel="noreferrer" className="text-red-500 underline underline-offset-2 dark:text-[#FF5CA8]">
+            {addr}
+          </a>
+        )
       }
-      nodes.push(
-        <a
-          key={`${keyPrefix}-addr-${match.index}`}
-          href={`${explorerBase}/address/${address}`}
-          target="_blank"
-          rel="noreferrer"
-          className="text-red-500 underline underline-offset-2 transition hover:text-red-600 dark:text-[#F3C623] dark:hover:text-[#F3C623]/90"
-        >
-          {address}
-        </a>
-      )
-      lastIndex = match.index + address.length
+      lastIndex = m.index + match.length
     }
-
-    if (lastIndex < segment.length) {
-      nodes.push(...renderTextWithUrls(segment.slice(lastIndex), `${keyPrefix}-tail`))
-    }
-
-    return nodes
-  }
-
-  const renderContent = (text: string) => {
-    const markdownImageRegex = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g
-    const pieces: React.ReactNode[] = []
-    const lines = text.split("\n")
-
-    lines.forEach((line, lineIndex) => {
-      if (lineIndex > 0) {
-        pieces.push(<br key={`br-${lineIndex}`} />)
-      }
-
-      let lastIndex = 0
-      const matches = Array.from(line.matchAll(markdownImageRegex))
-
-      if (matches.length === 0) {
-        pieces.push(...renderWithAddresses(line, `line-${lineIndex}`))
-        return
-      }
-
-      matches.forEach((match, matchIndex) => {
-        const [full, alt, url] = match
-        const start = match.index ?? 0
-        if (start > lastIndex) {
-          pieces.push(...renderWithAddresses(line.slice(lastIndex, start), `line-${lineIndex}-seg-${matchIndex}`))
-        }
-        pieces.push(renderImage(url, alt, `md-img-${lineIndex}-${matchIndex}`))
-        lastIndex = start + full.length
-      })
-
-      if (lastIndex < line.length) {
-        pieces.push(...renderWithAddresses(line.slice(lastIndex), `line-${lineIndex}-tail`))
-      }
-    })
-
-    return pieces
+    if (lastIndex < text.length) out.push(text.slice(lastIndex))
+    return out
   }
 
   const presets: { label: string; prompt: string }[] = [
@@ -216,8 +175,8 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
   const isFooter = variant === "footer"
   const wrapperClass = isFooter ? (align === "left" ? "relative mr-auto" : "relative ml-auto") : undefined
   const buttonClass = isFooter
-    ? "relative z-[140] grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white shadow-xl shadow-red-500/20 focus:outline-none dark:from-[#F3C623] dark:to-[#D9A800] dark:shadow-[#F3C623]/20"
-    : "fixed bottom-6 right-6 z-[140] grid h-14 w-14 place-items-center rounded-full bg-white/80 text-slate-900 shadow-xl shadow-slate-900/15 ring-1 ring-white/60 backdrop-blur-2xl transition-all hover:-translate-y-1 hover:shadow-2xl hover:ring-white/80 dark:bg-[#1c1c1c]/80 dark:text-white dark:shadow-black/40 dark:ring-white/10"
+  ? "relative z-40 grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] text-white shadow-xl shadow-[#DAD7CD]/20 focus:outline-none dark:from-[#DAD7CD] dark:to-[#DAD7CD] dark:shadow-[#DAD7CD]/20"
+  : "fixed bottom-8 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] text-white shadow-xl shadow-[#DAD7CD]/20 focus:outline-none dark:from-[#DAD7CD] dark:to-[#DAD7CD] dark:shadow-[#DAD7CD]/20"
   const panelClass = isFooter
     ? (align === "left"
         ? "absolute bottom-[calc(100%+0.5rem)] left-0 z-[150] flex h-[34rem] w-[26rem] flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white/90 text-slate-900 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-[#171717]/90 dark:text-slate-100"
@@ -234,8 +193,9 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
         whileHover={{ scale: 1.07 }}
         whileTap={{ scale: 0.95 }}
       >
-        <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-br from-red-500/20 via-transparent to-red-500/50 blur-lg" aria-hidden />
-        <MessageCircle className="relative h-6 w-6" />
+  <span className="absolute inset-0 rounded-full bg-[#DAD7CD]/30 blur-xl -z-10 dark:bg-[#DAD7CD]/30" aria-hidden />
+        <MessageCircle className="h-6 w-6" />
+  <span className="absolute -z-10 inline-flex h-full w-full animate-ping rounded-full bg-[#DAD7CD]/20 dark:bg-[#DAD7CD]/20" aria-hidden />
       </motion.button>
 
       <AnimatePresence>
@@ -312,9 +272,9 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
             <div className="flex items-center justify-between gap-3 border-b border-slate-200/60 px-4 py-3 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <div className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
-                  <Bot className="h-4 w-4 text-red-400 dark:text-[#F3C623]" />
+                  <Bot className="h-4 w-4 text-[#DAD7CD] dark:text-[#DAD7CD]" />
                 </div>
-                <div className="text-sm font-semibold">10xSwap AI Agent</div>
+                <div className="text-sm font-semibold">Accorto AI Agent</div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:inline">{chainLabel}</span>
@@ -331,7 +291,7 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   <button
                     key={x.label}
                     onClick={() => usePreset(x.prompt)}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:border-red-400/40 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:border-[#F3C623]/50"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:border-[#DAD7CD]/40 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:border-[#DAD7CD]/50"
                   >
                     {x.label}
                   </button>
@@ -352,8 +312,8 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   </button>
                 </div>
                 {showRules && (
-                  <div className="relative rounded-lg border border-red-300/30 bg-red-50/80 p-2 dark:border-[#F3C623]/30 dark:bg-[#F3C623]/10">
-                    <div className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-red-400/60 dark:bg-[#F3C623]/60" aria-hidden />
+                  <div className="relative rounded-lg border border-[#DAD7CD]/30 bg-[#DAD7CD]/10 p-2 dark:border-[#DAD7CD]/30 dark:bg-[#DAD7CD]/10">
+                    <div className="absolute left-0 top-0 h-full w-1 rounded-l-lg bg-[#DAD7CD]/60 dark:bg-[#DAD7CD]/60" aria-hidden />
                     <div className="grid max-h-48 gap-2 overflow-y-auto pr-2 pl-2">
                       <div>
                         <div className="mb-1 font-medium text-slate-900 dark:text-slate-200">Supported actions</div>
@@ -402,13 +362,13 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   <div className="flex max-w-[85%] items-start gap-2">
                     {m.role === "assistant" && (
                       <div className="mt-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 sm:grid">
-                        <Bot className="h-3.5 w-3.5 text-red-400 dark:text-[#F3C623]" />
+                        <Bot className="h-3.5 w-3.5 text-[#DAD7CD] dark:text-[#DAD7CD]" />
                       </div>
                     )}
                     <div
                       className={
                         m.role === "user"
-                          ? "max-w-full rounded-2xl bg-gradient-to-br from-red-500 to-red-600 px-3 py-2 text-sm text-white shadow-md dark:from-[#F3C623] dark:to-[#D9A800]"
+                          ? "max-w-full rounded-2xl bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] px-3 py-2 text-sm text-white shadow-md dark:from-[#DAD7CD] dark:to-[#DAD7CD]"
                           : "max-w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
                       }
                     >
@@ -431,7 +391,7 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
 
             {/* Input */}
             <div className="border-t border-slate-200/60 p-3 dark:border-white/10">
-              <div className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-inner focus-within:border-red-400/40 dark:border-white/10 dark:bg-white/5 dark:focus-within:border-[#F3C623]/50">
+              <div className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-inner focus-within:border-red-400/40 dark:border-white/10 dark:bg-white/5 dark:focus-within:border-[#FF5CA8]/50">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -445,7 +405,7 @@ export default function ChatBubble({ variant = "floating", align = "right" }: Ch
                   disabled={loading}
                   whileHover={{ scale: loading ? 1 : 1.05 }}
                   whileTap={{ scale: loading ? 1 : 0.95 }}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white shadow shadow-red-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:from-[#F3C623] dark:to-[#D9A800] dark:shadow-[#F3C623]/20"
+                  className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-[#DAD7CD] to-[#DAD7CD] text-white shadow shadow-[#DAD7CD]/20 disabled:cursor-not-allowed disabled:opacity-60 dark:from-[#DAD7CD] dark:to-[#DAD7CD] dark:shadow-[#DAD7CD]/20"
                 >
                   {loading ? (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

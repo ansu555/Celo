@@ -13,9 +13,9 @@ export default function SideAnalytics({ coinId }: { coinId?: string }) {
 
   return (
     <div className="space-y-3">
-      <Card>
+      <Card className="border-[#DAD7CD]">
         <CardHeader className="py-2">
-          <CardTitle className="text-sm">Supply Info</CardTitle>
+          <CardTitle className="text-sm text-[#DAD7CD]">Supply Info</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-xs">
           <Row label="Circulating" value={`${parseFloat(coin.supply?.circulating || "0").toLocaleString()} ${coin.symbol}`} />

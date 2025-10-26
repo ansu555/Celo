@@ -77,7 +77,7 @@ export default function CoinOverviewPane({ coinId }: { coinId?: string }) {
       {/* Header: name + rank + autopilot */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-primary/10 dark:bg-[#F3C623]/10 rounded-full flex items-center justify-center text-lg font-mono text-primary dark:text-[#F3C623]">
+          <div className="w-12 h-12 bg-primary/10 dark:bg-[#FF5CA8]/10 rounded-full flex items-center justify-center text-lg font-mono text-primary dark:text-[#FF5CA8]">
             {coin.symbol?.substring(0, 3)}
           </div>
           <div>
@@ -153,7 +153,7 @@ export default function CoinOverviewPane({ coinId }: { coinId?: string }) {
             </CardHeader>
             <CardContent>
               <ChartContainer
-                config={{ price: { label: "Price", theme: { light: "red-600", dark: "#F3C623" } } }}
+                config={{ price: { label: "Price", color: "#FF5CA8" } }}
                 className="h-[360px]"
               >
                 <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
