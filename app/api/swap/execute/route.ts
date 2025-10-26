@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Address, createPublicClient, createWalletClient, http } from 'viem'
-import { avalancheFuji } from 'viem/chains'
-import { privateKeyToAccount } from 'viem/accounts'
-import { executeCustomSwap, type CustomSwapParams } from '../../../../lib/customSwap'
+import { Address, createPublicClient, http } from 'viem'
+import RouterAbi from '@/lib/abi/Router.json'
+import { prepareSwapTransaction, type CustomSwapParams } from '../../../../lib/customSwap'
+import { getViemChainFromEnv } from '@/lib/chain'
+import { prepareDemoSwap, isDemoSwapEnabled, simulateDemoSwap } from '@/lib/demo-swap'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
       deadlineSecondsFromNow,
       privateTx = false,
       maxFeePerGasGwei,
-      maxPriorityFeePerGasGwei
+      maxPriorityFeePerGasGwei,
+      userAddress
     } = body
 
     // Validate required fields
@@ -38,33 +40,75 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Setup viem clients for Avalanche Fuji
-    const chainId = 43113
-    const chain = avalancheFuji
-    const rpcUrl = process.env.RPC_URL_FUJI || process.env.RPC_URL || 'https://api.avax-test.network/ext/bc/C/rpc'
+    const recipientAddress = (recipient || userAddress) as string | undefined
+    if (!recipientAddress || !/^0x[a-fA-F0-9]{40}$/.test(recipientAddress)) {
+      return NextResponse.json(
+        { error: 'Valid recipient wallet address is required' },
+        { status: 400 }
+      )
+    }
+
+    const chain = getViemChainFromEnv()
+    const chainId = chain.id
+    const rpcUrl = process.env.RPC_URL_CELO || process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || 'https://forno.celo-sepolia.celo-testnet.org'
     
     const publicClient = createPublicClient({ 
       chain, 
       transport: http(rpcUrl) 
     })
 
-    // Get private key and create account
-    const privateKeyRaw = process.env.PRIVATE_KEY || process.env.TEST_PRIVATE_KEY
-    if (!privateKeyRaw) {
-      return NextResponse.json(
-        { error: 'Private key not configured' },
-        { status: 500 }
-      )
-    }
+    // Check if demo swap mode is enabled
+    const useDemoMode = isDemoSwapEnabled()
 
-    const privateKey = (privateKeyRaw.startsWith('0x') ? privateKeyRaw : `0x${privateKeyRaw}`) as `0x${string}`
-    const account = privateKeyToAccount(privateKey)
-    
-    const smartAccount = createWalletClient({
-      account,
-      chain,
-      transport: http(rpcUrl)
-    })
+    if (useDemoMode) {
+      // Demo mode: simplified swap using direct transfer simulation
+      const simulation = await simulateDemoSwap({
+        tokenInSymbol: tokenIn,
+        tokenOutSymbol: tokenOut,
+        amount: amount.toString(),
+        slippageBps: slippage,
+        recipient: recipientAddress as Address
+      })
+
+      const demoPrep = await prepareDemoSwap(
+        publicClient,
+        recipientAddress as Address,
+        {
+          tokenInSymbol: tokenIn,
+          tokenOutSymbol: tokenOut,
+          amount: amount.toString(),
+          slippageBps: slippage,
+          recipient: recipientAddress as Address
+        }
+      )
+
+      return NextResponse.json({
+        success: true,
+        mode: 'DEMO',
+        tx: {
+          type: 'DEMO_TRANSFER',
+          tokenInAddress: demoPrep.tokenInAddress,
+          tokenOutAddress: demoPrep.tokenOutAddress,
+          amountIn: demoPrep.amountInUnits.toString(),
+          minAmountOut: demoPrep.minOutUnits.toString(),
+          recipient: recipientAddress
+        },
+        details: {
+          expectedOut: simulation.expectedOut,
+          minOut: simulation.minOut,
+          priceImpactBps: simulation.priceImpactBps,
+          route: {
+            hops: [demoPrep.tokenInAddress, demoPrep.tokenOutAddress],
+            kind: 'DEMO_DIRECT',
+            pools: []
+          },
+          slippageBps: slippage,
+          deadline: Math.floor(Date.now() / 1000) + 300
+        },
+        message: '🎭 Demo Mode: This swap will create a real transaction using simplified pricing',
+        timestamp: Date.now()
+      })
+    }
 
     // Build swap parameters
     const swapParams: CustomSwapParams = {
@@ -73,8 +117,8 @@ export async function POST(request: NextRequest) {
       amount: amount.toString(),
       slippageBps: slippage,
       wait,
-      recipient: recipient as Address | undefined,
-      routeId, // This is the key addition for routeId support
+      recipient: recipientAddress as Address,
+      routeId,
       deadline,
       deadlineSecondsFromNow,
       privateTx,
@@ -82,21 +126,58 @@ export async function POST(request: NextRequest) {
       maxPriorityFeePerGasGwei
     }
 
-    // Execute the swap
-    const result = await executeCustomSwap(
+    const prepared = await prepareSwapTransaction(
       {
         chainId,
         publicClient,
-        smartAccount,
-        accountAddress: account.address
+        accountAddress: recipientAddress as Address
       },
       swapParams
     )
 
+    const simulationPreview = await publicClient.simulateContract({
+      account: recipientAddress as Address,
+      address: prepared.routerAddress,
+      abi: RouterAbi as any,
+      functionName: 'swapExactTokensForTokens',
+      args: [
+        prepared.amountInUnits,
+        prepared.minOutUnits,
+        prepared.path,
+        recipientAddress as Address,
+        prepared.deadline
+      ]
+    })
+
+    const previewRequest = simulationPreview.request as any
+
     return NextResponse.json({
       success: true,
-      txHash: result.hash,
-      details: result.details,
+      tx: {
+        address: prepared.routerAddress,
+        functionName: 'swapExactTokensForTokens',
+        args: {
+          amountIn: prepared.amountInUnits.toString(),
+          minAmountOut: prepared.minOutUnits.toString(),
+          path: prepared.path,
+          recipient: recipientAddress,
+          deadline: prepared.deadline.toString()
+        }
+      },
+      preview: {
+        to: previewRequest.to ?? prepared.routerAddress,
+        data: previewRequest.data,
+        value: previewRequest.value ? previewRequest.value.toString() : '0',
+        gas: previewRequest.gas ? previewRequest.gas.toString() : null
+      },
+      details: {
+        expectedOut: prepared.simulation.expectedOut,
+        minOut: prepared.simulation.minOut,
+        priceImpactBps: prepared.simulation.priceImpactBps,
+        route: prepared.simulation.route,
+        slippageBps: swapParams.slippageBps ?? 100,
+        deadline: prepared.deadlineSec
+      },
       timestamp: Date.now()
     })
 

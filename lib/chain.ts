@@ -2,6 +2,8 @@ import { defineChain } from 'viem'
 import { celo, celoAlfajores } from 'viem/chains'
 
 // Celo Sepolia chain definition
+const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'
+
 const celoSepolia = defineChain({
   id: 11142220,
   name: 'Celo Sepolia',
@@ -13,7 +15,13 @@ const celoSepolia = defineChain({
   blockExplorers: {
     default: { name: 'CeloScan', url: 'https://celo-sepolia.celoscan.io' }
   },
-  testnet: true
+  testnet: true,
+  contracts: {
+    multicall3: {
+      address: MULTICALL3_ADDRESS,
+      blockCreated: 1
+    }
+  }
 })
 
 export function getViemChainFromEnv() {
@@ -32,6 +40,12 @@ export function getViemChainFromEnv() {
     rpcUrls: {
       default: { http: rpcUrl ? [rpcUrl] : ['https://forno.celo-sepolia.celo-testnet.org'] },
       public: { http: rpcUrl ? [rpcUrl] : ['https://forno.celo-sepolia.celo-testnet.org'] }
+    },
+    contracts: {
+      multicall3: {
+        address: MULTICALL3_ADDRESS,
+        blockCreated: 1
+      }
     }
   })
 }

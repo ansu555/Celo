@@ -25,6 +25,11 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 type RoutingClient = PublicClient<Transport, ViemChain>
 
+function isMulticallUnsupported(error: any): boolean {
+  const message = error?.shortMessage || error?.message || ''
+  return error?.name === 'ChainDoesNotSupportContract' || message.includes('does not support contract "multicall3"')
+}
+
 async function fetchTokenMetadata(publicClient: RoutingClient, address: Address): Promise<TokenMetadata | null> {
   try {
     const [symbolRaw, decimalsRaw] = await publicClient.multicall({
@@ -43,7 +48,24 @@ async function fetchTokenMetadata(publicClient: RoutingClient, address: Address)
 
     return { symbol: symbolResult, decimals: Number(decimalsResult) }
   } catch (error) {
-    console.error('Failed to fetch token metadata', { address, error })
+    if (!isMulticallUnsupported(error)) {
+      console.error('Failed to fetch token metadata', { address, error })
+      return null
+    }
+  }
+
+  try {
+    const [symbolResult, decimalsResult] = await Promise.all([
+      publicClient.readContract({ address, abi: erc20Abi, functionName: 'symbol' }),
+      publicClient.readContract({ address, abi: erc20Abi, functionName: 'decimals' })
+    ])
+
+    if (!symbolResult || typeof symbolResult !== 'string') return null
+    if (decimalsResult == null) return null
+
+    return { symbol: symbolResult, decimals: Number(decimalsResult) }
+  } catch (error) {
+    console.error('Failed to fetch token metadata (fallback)', { address, error })
     return null
   }
 }
@@ -73,17 +95,40 @@ async function fetchPairAsPool(
   chainId: number
 ): Promise<Pool | null> {
   try {
-    const [reservesResult, token0Result, token1Result] = await client.multicall({
-      contracts: [
-        { address: pairAddress, abi: pairAbi, functionName: 'getReserves', args: [] },
-        { address: pairAddress, abi: pairAbi, functionName: 'token0', args: [] },
-        { address: pairAddress, abi: pairAbi, functionName: 'token1', args: [] }
-      ],
-      allowFailure: true
-    })
+    let reservesResult: any
+    let token0Result: any
+    let token1Result: any
 
-    if (!reservesResult?.result || !token0Result?.result || !token1Result?.result) {
-      return null
+    try {
+      [reservesResult, token0Result, token1Result] = await client.multicall({
+        contracts: [
+          { address: pairAddress, abi: pairAbi, functionName: 'getReserves', args: [] },
+          { address: pairAddress, abi: pairAbi, functionName: 'token0', args: [] },
+          { address: pairAddress, abi: pairAbi, functionName: 'token1', args: [] }
+        ],
+        allowFailure: true
+      })
+    } catch (multicallError) {
+      if (!isMulticallUnsupported(multicallError)) {
+        throw multicallError
+      }
+    }
+
+    if (!reservesResult || !token0Result || !token1Result || !reservesResult.result || !token0Result.result || !token1Result.result) {
+      try {
+        const [reservesFallback, token0Fallback, token1Fallback] = await Promise.all([
+          client.readContract({ address: pairAddress, abi: pairAbi, functionName: 'getReserves', args: [] }),
+          client.readContract({ address: pairAddress, abi: pairAbi, functionName: 'token0', args: [] }),
+          client.readContract({ address: pairAddress, abi: pairAbi, functionName: 'token1', args: [] })
+        ])
+
+        reservesResult = { result: reservesFallback }
+        token0Result = { result: token0Fallback }
+        token1Result = { result: token1Fallback }
+      } catch (fallbackError) {
+        console.error('Failed to fetch pair data (fallback)', { pairAddress, fallbackError })
+        return null
+      }
     }
 
     const token0Address = token0Result.result as Address
@@ -102,7 +147,9 @@ async function fetchPairAsPool(
     const [reserve0, reserve1] = reservesResult.result as [bigint, bigint, number]
 
     return {
-      id: `${token0.address}-${token1.address}`.toLowerCase(),
+      id: pairAddress.toLowerCase(),
+      address: pairAddress.toLowerCase(),
+      dex: 'ubeswap',
       token0,
       token1,
       reserve0,
@@ -142,20 +189,45 @@ export async function fetchUbeswapPools(options: FetchUbeswapPoolsOptions = {}):
   const limit = options.maxPairs ? Math.min(totalPairs, options.maxPairs) : totalPairs
   const indices = Array.from({ length: limit }, (_, idx) => BigInt(idx))
 
-  const pairAddressesResults = await client.multicall({
-    contracts: indices.map((i) => ({
-      address: factoryAddress,
-      abi: factoryAbi,
-      functionName: 'allPairs',
-      args: [i]
-    })),
-    allowFailure: true
-  })
+  let pairAddresses: Address[] = []
 
-  const poolPromises = pairAddressesResults
-    .map((res) => res?.result as Address | undefined)
-    .filter((addr): addr is Address => !!addr && addr !== ZERO_ADDRESS)
-    .map((addr) => fetchPairAsPool(client, addr, chain.id))
+  try {
+    const pairAddressesResults = await client.multicall({
+      contracts: indices.map((i) => ({
+        address: factoryAddress,
+        abi: factoryAbi,
+        functionName: 'allPairs',
+        args: [i]
+      })),
+      allowFailure: true
+    })
+
+    pairAddresses = pairAddressesResults
+      .map((res) => res?.result as Address | undefined)
+      .filter((addr): addr is Address => !!addr && addr !== ZERO_ADDRESS)
+  } catch (error) {
+    if (!isMulticallUnsupported(error)) {
+      throw error
+    }
+
+    const results = await Promise.all(indices.map(async (i) => {
+      try {
+        return await client.readContract({
+          address: factoryAddress,
+          abi: factoryAbi,
+          functionName: 'allPairs',
+          args: [i]
+        }) as Address
+      } catch (readError) {
+        console.error('Failed to read pair address from factory (fallback)', { index: i, readError })
+        return undefined
+      }
+    }))
+
+    pairAddresses = results.filter((addr): addr is Address => !!addr && addr !== ZERO_ADDRESS)
+  }
+
+  const poolPromises = pairAddresses.map((addr) => fetchPairAsPool(client, addr, chain.id))
 
   const pools = (await Promise.all(poolPromises))
     .filter((pool): pool is Pool => !!pool && pool.reserve0 > BigInt(0) && pool.reserve1 > BigInt(0))

@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAccount } from 'wagmi'
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
+import type { Address } from 'viem'
+import { erc20Abi, parseUnits, formatUnits } from 'viem'
 import { Settings, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SettingsModal } from "./settings-modal"
@@ -14,6 +16,76 @@ import { SellPanel } from "./sellpanel"
 import { AssetSelector } from "./asset-selector"
 import { useTradeableAssets, AssetInfo } from "../../hooks/use-tradeable-assets"
 import { useToast } from "@/hooks/use-toast"
+import RouterAbi from '@/lib/abi/Router.json'
+
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_SWAP_MODE === 'true'
+
+type RouteQuote = {
+  routeId: string
+  tokens: { symbol: string; address: string; decimals: number }[]
+  pools: {
+    id: string
+    address: string
+    dex: string
+    feeBps: number
+    token0: { symbol: string; address: string }
+    token1: { symbol: string; address: string }
+  }[]
+  amountOut: string
+  amountOutFormatted: string
+  minOut: string
+  minOutFormatted: string
+  priceImpactBps: number | null
+  priceImpactPercent: number | null
+  estimatedGas: number
+  kind: 'DIRECT' | 'MULTI_HOP'
+}
+
+type SwapExecutionDetails = {
+  expectedOut: string
+  minOut: string
+  priceImpactBps: number | null
+  route: {
+    hops: string[]
+    kind: string
+    pools?: string[]
+  }
+  slippageBps: number
+  deadline: number
+}
+
+type SwapExecutionResponse = {
+  success: boolean
+  tx: {
+    address: string
+    functionName: string
+    args: {
+      amountIn: string
+      minAmountOut: string
+      path: string[]
+      recipient: string
+      deadline: string
+    }
+  }
+  preview: {
+    to: string
+    data?: `0x${string}`
+    value: string
+    gas: string | null
+  }
+  details: SwapExecutionDetails
+  timestamp: number
+}
+
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11142220)
+const EXPLORER_MAP: Record<number, string> = {
+  42220: 'https://celoscan.io',
+  44787: 'https://alfajores.celoscan.io',
+  11142220: 'https://celo-sepolia.celoscan.io'
+}
+const DEFAULT_EXPLORER = EXPLORER_MAP[11142220]
+const ROUTER_ADDRESS = (process.env.NEXT_PUBLIC_AMM_ROUTER || '').toLowerCase()
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 type SwapCardProps = {
   onPairChange?: (from: AssetInfo | null, to: AssetInfo | null) => void
@@ -21,6 +93,8 @@ type SwapCardProps = {
 
 export function SwapCard({ onPairChange }: SwapCardProps) {
   const { address: walletAddress, isConnected } = useAccount()
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
   const { assets, loading: assetsLoading } = useTradeableAssets()
   const { toast } = useToast()
   
@@ -33,7 +107,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
   const [activeTab, setActiveTab] = useState<'swap' | 'limit' | 'buy' | 'sell'>('swap')
   const [isSwapping, setIsSwapping] = useState(false)
   const [quoteLoading, setQuoteLoading] = useState(false)
-  const [routeData, setRouteData] = useState<any>(null)
+  const [routeData, setRouteData] = useState<RouteQuote | null>(null)
+  const [availableRoutes, setAvailableRoutes] = useState<RouteQuote[]>([])
 
   useEffect(() => {
     onPairChange?.(fromToken, toToken)
@@ -73,16 +148,18 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
     setRouteData(null)
 
     try {
-      const amountInBaseUnits = parseFloat(fromAmount) * Math.pow(10, fromToken.decimals)
+      const slippagePercent = parseFloat(slippage)
+      const slippageBps = Number.isFinite(slippagePercent) ? Math.max(0, Math.round(slippagePercent * 100)) : 50
 
-      const response = await fetch('/api/router/quote', {
+      const response = await fetch('/api/swap/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fromAssetId: fromToken.id,
-          toAssetId: toToken.id,
-          amount: amountInBaseUnits,
-          slippage: parseFloat(slippage),
+          tokenIn: fromToken.symbol,
+          tokenOut: toToken.symbol,
+          amount: fromAmount,
+          slippage: slippageBps,
+          maxRoutes: 3
         }),
       })
 
@@ -91,13 +168,22 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
       }
 
       const data = await response.json()
-      
-      if (data.route && data.outputAmount) {
-        const outputAmount = data.outputAmount / Math.pow(10, toToken.decimals)
-        setToAmount(outputAmount.toFixed(toToken.decimals))
-        setRouteData(data)
+
+      if (data.bestRoute) {
+        const bestRoute: RouteQuote = data.bestRoute
+        const decimalOutput = parseFloat(bestRoute.amountOutFormatted)
+        const precision = Math.min(toToken.decimals, 6)
+        const displayAmount = Number.isFinite(decimalOutput)
+          ? decimalOutput.toFixed(precision)
+          : bestRoute.amountOutFormatted
+
+        setToAmount(displayAmount)
+        setRouteData(bestRoute)
+        setAvailableRoutes(Array.isArray(data.routes) ? data.routes : [bestRoute])
       } else {
         setToAmount('0')
+        setRouteData(null)
+        setAvailableRoutes([])
         toast({
           title: "No Route Found",
           description: "Could not find a swap route for this pair",
@@ -107,6 +193,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
     } catch (error) {
       console.error('Quote error:', error)
       setToAmount('0')
+      setRouteData(null)
+      setAvailableRoutes([])
       toast({
         title: "Quote Failed",
         description: error instanceof Error ? error.message : "Failed to get quote",
@@ -140,34 +228,185 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
     setIsSwapping(true)
 
     try {
-      // Step 1: Prepare swap
+      if (!walletAddress || !walletClient || !publicClient) {
+        throw new Error('Wallet client not available. Please reconnect and try again.')
+      }
+
+      const accountAddress = walletClient.account?.address as Address | undefined
+      if (!accountAddress) {
+        throw new Error('Active account not detected. Please reconnect your wallet.')
+      }
+
+      if (walletClient.chain?.id && walletClient.chain.id !== CHAIN_ID) {
+        throw new Error('Please switch your wallet to the configured Celo network to swap.')
+      }
+
+      if (!ROUTER_ADDRESS || ROUTER_ADDRESS === ZERO_ADDRESS) {
+        throw new Error('Router address not configured. Set NEXT_PUBLIC_AMM_ROUTER in the environment.')
+      }
+
+      if (fromToken.address === 'CELO') {
+        throw new Error('Native CELO swaps are not supported yet. Please wrap CELO to cCELO first.')
+      }
+
       toast({
         title: "🔄 Preparing Swap...",
-        description: "Building swap transaction"
+        description: "Building transaction for your wallet"
       })
-
-      const amountInBaseUnits = parseFloat(fromAmount) * Math.pow(10, fromToken.decimals)
 
       const response = await fetch('/api/swap/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fromToken: fromToken.address,
-          toToken: toToken.address,
-          amount: amountInBaseUnits.toString(),
-          slippage: parseFloat(slippage),
-          userAddress: walletAddress,
+          tokenIn: fromToken.symbol,
+          tokenOut: toToken.symbol,
+          amount: fromAmount,
+          slippage: Math.max(0, Math.round(parseFloat(slippage) * 100)),
+          routeId: routeData?.routeId,
+          recipient: walletAddress,
+          userAddress: walletAddress
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to execute swap')
+        throw new Error(errorData.message || errorData.error || 'Failed to prepare swap')
       }
 
-      const { txHash } = await response.json()
+      const payload: SwapExecutionResponse = await response.json()
+      if (!payload.success) {
+        throw new Error('Swap preparation failed')
+      }
 
-      // Step 2: SUCCESS!
+      // Handle demo mode swaps (simple transfer)
+      if ((payload as any).mode === 'DEMO') {
+        const demoTx = (payload as any).tx
+        const tokenInAddress = demoTx.tokenInAddress as Address
+        const tokenOutAddress = demoTx.tokenOutAddress as Address
+        const amountIn = BigInt(demoTx.amountIn)
+
+        // Check and approve if needed
+        const allowance: bigint = await publicClient.readContract({
+          address: tokenInAddress,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [accountAddress, accountAddress] // Self-allowance for demo
+        })
+
+        // For demo, we just do a mock transfer to show transaction flow
+        // In reality, you'd have a demo contract that handles the swap
+        toast({
+          title: "🎭 Demo Swap",
+          description: "Creating demo transaction..."
+        })
+
+        // Create a simple transfer as demo (this proves wallet connectivity works)
+        const demoHash = await walletClient.writeContract({
+          account: accountAddress,
+          address: tokenInAddress,
+          abi: erc20Abi,
+          functionName: 'transfer',
+          args: [accountAddress, BigInt(1)] // Transfer 1 wei to self as demo
+        })
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: demoHash })
+        if (receipt.status !== 'success') {
+          throw new Error('Demo transaction reverted')
+        }
+
+        const expectedOutFormatted = payload.details.expectedOut
+        const minOutFormatted = payload.details.minOut
+
+        toast({
+          title: "✅ Demo Swap Successful!",
+          description: (
+            <div className="mt-2 space-y-2 text-sm">
+              <div className="font-semibold text-green-600 dark:text-green-400">
+                Transaction Confirmed!
+              </div>
+              <div className="text-amber-600 dark:text-amber-400">
+                🎭 Demo Mode - Real transaction with simulated swap
+              </div>
+              <div>Input: {fromAmount} {fromToken.unitName}</div>
+              <div>Output: ~{expectedOutFormatted} {toToken.unitName}</div>
+              <div className="text-xs text-muted-foreground">
+                Min received (after slippage): {minOutFormatted} {toToken.unitName}
+              </div>
+              <a
+                href={`${EXPLORER_MAP[CHAIN_ID] || DEFAULT_EXPLORER}/tx/${demoHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline text-xs block"
+              >
+                View on Celo Explorer →
+              </a>
+            </div>
+          ),
+          duration: 12000,
+        })
+
+        setFromAmount('')
+        setToAmount(expectedOutFormatted)
+        setRouteData(null)
+        setIsSwapping(false)
+        return
+      }
+
+      // Standard router-based swap
+      const routerAddress = payload.tx.address as Address
+      const amountInUnits = BigInt(payload.tx.args.amountIn)
+      const minAmountOutUnits = BigInt(payload.tx.args.minAmountOut)
+      const path = payload.tx.args.path.map((addr) => addr as Address)
+      const recipientAddress = payload.tx.args.recipient as Address
+      const deadline = BigInt(payload.tx.args.deadline)
+
+      const tokenInAddress = fromToken.address as Address
+      const allowance: bigint = await publicClient.readContract({
+        address: tokenInAddress,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [accountAddress, routerAddress]
+      })
+
+      if (allowance < amountInUnits) {
+        const approveHash = await walletClient.writeContract({
+          account: accountAddress,
+          address: tokenInAddress,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [routerAddress, amountInUnits]
+        })
+
+        toast({
+          title: "✅ Approval Sent",
+          description: "Waiting for approval confirmation..."
+        })
+
+        await publicClient.waitForTransactionReceipt({ hash: approveHash })
+      }
+
+      const swapHash = await walletClient.writeContract({
+        account: accountAddress,
+        address: routerAddress,
+        abi: RouterAbi as any,
+        functionName: payload.tx.functionName as 'swapExactTokensForTokens',
+        args: [
+          amountInUnits,
+          minAmountOutUnits,
+          path,
+          recipientAddress,
+          deadline
+        ]
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash })
+      if (receipt.status !== 'success') {
+        throw new Error('Transaction reverted')
+      }
+
+      const expectedOutFormatted = formatUnits(BigInt(payload.details.expectedOut), toToken.decimals)
+      const minOutFormatted = formatUnits(BigInt(payload.details.minOut), toToken.decimals)
+
       toast({
         title: "✅ Swap Successful!",
         description: (
@@ -176,9 +415,12 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
               Transaction Confirmed!
             </div>
             <div>Swapped: {fromAmount} {fromToken.unitName}</div>
-            <div>Received: ~{toAmount} {toToken.unitName}</div>
-            <a 
-              href={`https://explorer.celo.org/alfajores/tx/${txHash}`}
+            <div>Received: ~{expectedOutFormatted} {toToken.unitName}</div>
+            <div className="text-xs text-muted-foreground">
+              Min received (after slippage): {minOutFormatted} {toToken.unitName}
+            </div>
+            <a
+              href={`${EXPLORER_MAP[CHAIN_ID] || DEFAULT_EXPLORER}/tx/${swapHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:underline text-xs block"
@@ -187,13 +429,13 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
             </a>
           </div>
         ),
-        duration: 10000,
+        duration: 12000,
       })
 
-      // Clear form after successful swap
-      setFromAmount('')
-      setToAmount('')
-      setRouteData(null)
+      // Refresh state after successful swap
+  setFromAmount('')
+  setToAmount(expectedOutFormatted)
+  setRouteData(null)
 
     } catch (error: unknown) {
       console.error('Swap error:', error)
@@ -370,34 +612,66 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
 
           {activeTab === 'swap' && (
             <div className="flex flex-col items-center space-y-3.5">
+              {/* Demo Mode Banner */}
+              {DEMO_MODE && (
+                <div className="w-full p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+                    <span>🎭</span>
+                    <span className="font-medium">Demo Mode Active</span>
+                    <span className="text-amber-600/80 dark:text-amber-500/80">
+                      - Swaps create real transactions with simplified pricing
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Quote Info */}
               {fromToken && toToken && toAmount && !quoteLoading && routeData && (
                 <div className="w-full p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Rate</span>
                     <span className="font-medium">
-                      1 {fromToken.unitName} = {(parseFloat(toAmount) / parseFloat(fromAmount || '1')).toFixed(6)} {toToken.unitName}
+                      1 {fromToken.unitName} = {(parseFloat(toAmount || '0') / Math.max(parseFloat(fromAmount || '0'), 1e-12)).toFixed(6)} {toToken.unitName}
                     </span>
                   </div>
-                  {routeData.route?.dex && (
+                  {routeData.tokens.length > 1 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Route</span>
-                      <span className="font-medium">{routeData.route.dex}</span>
+                      <span className="font-medium">{routeData.tokens.map((token) => token.symbol).join(" → ")}</span>
+                    </div>
+                  )}
+                  {routeData.pools.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">DEX</span>
+                      <span className="font-medium">
+                        {Array.from(new Set(routeData.pools.map((pool) => pool.dex))).join(" → ")}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Slippage</span>
                     <span className="font-medium">{slippage}%</span>
                   </div>
-                  {routeData.priceImpact && (
+                  {routeData.priceImpactPercent !== null && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Price Impact</span>
                       <span className={cn(
                         "font-medium",
-                        parseFloat(routeData.priceImpact) > 5 ? "text-destructive" : ""
+                        routeData.priceImpactPercent > 5 ? "text-destructive" : ""
                       )}>
-                        {routeData.priceImpact}%
+                        {routeData.priceImpactPercent.toFixed(2)}%
                       </span>
+                    </div>
+                  )}
+                  {routeData.pools.length > 0 && (
+                    <div className="pt-2 mt-2 border-t border-border/40 space-y-1 text-xs">
+                      <div className="text-muted-foreground uppercase tracking-wide">Pools</div>
+                      {routeData.pools.map((pool) => (
+                        <div key={pool.id} className="flex justify-between">
+                          <span className="font-medium text-foreground/80">{pool.dex}</span>
+                          <span>{pool.token0.symbol}/{pool.token1.symbol}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
