@@ -265,9 +265,9 @@ export function RuleBuilderModal(props: RuleBuilderModalProps) {
   }, [coinOptions])
 
   return (
-    <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent className="max-w-2xl">
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
+        <DialogContent className="max-w-2xl border border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl dark:border-white/10">
         <DialogHeader>
           <DialogTitle>Create Auto-Pilot Rule</DialogTitle>
           <DialogDescription>
@@ -590,10 +590,10 @@ export function RuleBuilderModal(props: RuleBuilderModalProps) {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={handlePreview}>
+              <Button type="button" variant="outline" className="border-white/20 bg-white/10 dark:bg-[#171717]/80 backdrop-blur-xl dark:border-white/10 text-red-600 dark:text-red-600 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white" onClick={handlePreview}>
                 Preview Rule
               </Button>
-              <Button type="submit">Save Rule</Button>
+              <Button type="submit" className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:text-white dark:hover:bg-red-700">Save Rule</Button>
             </div>
           </form>
         </Form>

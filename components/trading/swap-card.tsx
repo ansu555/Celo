@@ -674,18 +674,8 @@ export function SwapCard({ onPairChange }: SwapCardProps) {
 
           {activeTab === "swap" && (
             <div className="flex flex-col items-center space-y-3.5">
-              {/* Demo Mode Banner */}
-              {DEMO_MODE && (
-                <div className="w-full p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-                    <span>🎭</span>
-                    <span className="font-medium">Demo Mode Active</span>
-                    <span className="text-amber-600/80 dark:text-amber-500/80">
-                      - Swaps create real transactions with simplified pricing
-                    </span>
-                  </div>
-                </div>
-              )}
+        
+              
 
               {/* Quote Info */}
               {fromToken &&
