@@ -123,11 +123,6 @@ export function Header() {
       <div className="hidden md:grid md:grid-cols-3 h-full items-center gap-4">
         {/* Logo - Left */}
         <Link href="/" className="flex items-center font-extrabold text-lg md:text-xl tracking-tight">
-          <img 
-            src="/10xswap_logo.png" 
-            alt="Accorto Logo" 
-            className="h-8 w-8 mr-2"
-          />
           <span className="text-white">Accorto</span>
         </Link>
 
